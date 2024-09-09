@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// input program string
+char *user_input;
+
 // kind of token
 typedef enum {
   TK_RESERVED, // symbol
@@ -23,7 +26,7 @@ struct _token_t {
 
  token_t *token;
 
-// make error function
+// print error
 // args are same as printf
 void error(char *fmt, ...) {
   va_list ap;
@@ -32,6 +35,21 @@ void error(char *fmt, ...) {
   fprintf(stderr, "\n");
   exit(1);
 }
+
+// print error with place
+void error_at(char *loc, char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+
+  int pos = loc - user_input;
+  fprintf(stderr, "%s\n", user_input);
+  fprintf(stderr, "%*s", pos, " ");
+  fprintf(stderr, "^ ");
+  vfprintf(stderr, fmt, ap);
+  fprintf(stderr, "\n");
+  exit(1);
+}
+
 
 // if next token is expected token, returns true and read next token
 // other, return false
@@ -44,14 +62,14 @@ bool consume(char op) {
 // if next token is expected token, returns true and read next token
 // other, throws error
 void expect(char op) {
-  if (token->kind != TK_RESERVED || token->str[0] != op) error("'%c' is not expected symbol", op);
+  if (token->kind != TK_RESERVED || token->str[0] != op) error_at(token->str, "'%c' is not expected symbol", op);
   token = token->next;
 }
 
 // if next token is number, returns the number and read next token
 // other, throws error
 int expect_number() {
-  if (token->kind != TK_NUM) error("'%c' is not number", token->str);
+  if (token->kind != TK_NUM) error_at(token->str, "'%c' is not number", token->str);
   int val = token->val;
   token = token->next;
   return val;
@@ -106,8 +124,8 @@ int main(int argc, char **argv) {
     fprintf(stderr, "ERROR!: Number of args == 2");
     return 1;
   }
-
-  token = tokenize(argv[1]);
+  user_input = argv[1];
+  token = tokenize(user_input);
 
   // output a first half of assembry
   printf(".intel_syntax noprefix\n");
