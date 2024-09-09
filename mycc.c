@@ -157,6 +157,7 @@ node_t *new_node_num(int val) {
 
 node_t *mul();
 node_t *primary();
+node_t *unary();
 
 node_t *expr() {
   node_t *node = mul();
@@ -180,18 +181,26 @@ node_t *expr() {
 }
 
 node_t *mul() {
-  node_t *node = primary();
+  node_t *node = unary();
   
   for(;;) {
     if(consume('*')) {
-      node = new_node(ND_MUL, node, primary());
+      node = new_node(ND_MUL, node, unary());
     }
     else if(consume('/')) {
-      node = new_node(ND_DIV, node, primary());
+      node = new_node(ND_DIV, node, unary());
     }
     else
       return node;
   }
+}
+
+node_t *unary() {
+  if(consume('+'))
+    return primary();
+  if(consume('-'))
+    return new_node(ND_SUB, new_node_num(0), primary());
+  return primary();
 }
 
 node_t *primary() {
