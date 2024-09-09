@@ -101,7 +101,9 @@ token_t *tokenize(char *p) {
       continue;
     }
 
-    if(*p == '+' || *p == '-') {
+    if(*p == '+' || *p == '-' ||
+      *p == '*' || *p == '/' ||
+      *p == '(' || *p == ')') {
       cur = new_token(TK_RESERVED, cur, p++);
       continue;
     }
@@ -119,32 +121,143 @@ token_t *tokenize(char *p) {
   return head.next;
 }
 
+// abstruct syntax tree kind
+typedef enum {
+  ND_ADD, // +
+  ND_SUB, // -
+  ND_MUL, // *
+  ND_DIV, // /
+  ND_NUM, // integer
+} NodeKind;
+
+typedef struct _node_t node_t;
+
+// abstruct syntax tree type
+struct _node_t {
+  NodeKind kind; // node type
+  node_t *lhs; // left hand side expresstion
+  node_t *rhs; // right hand side expresstion
+  int val;
+};
+
+node_t *new_node(NodeKind kind, node_t *lhs, node_t *rhs) {
+  node_t *node = calloc(1, sizeof(node_t));
+  node->kind = kind;
+  node->lhs = lhs;
+  node->rhs = rhs;
+  return node;
+}
+
+node_t *new_node_num(int val) {
+  node_t *node = calloc(1, sizeof(node_t));
+  node->kind = ND_NUM;
+  node->val = val;
+  return node;
+}
+
+node_t *mul();
+node_t *primary();
+
+node_t *expr() {
+  node_t *node = mul();
+
+  for(;;) {
+    if(consume('+')) {
+      node = new_node(ND_ADD, node, mul());
+    }
+    else if(consume('-')) {
+      node = new_node(ND_SUB, node, mul());
+    }
+    else if(consume('*')) {
+      node = new_node(ND_MUL, node, mul());
+    }
+    else if(consume('/')) {
+      node = new_node(ND_DIV, node, mul());
+    }
+    else
+      return node;
+  }
+}
+
+node_t *mul() {
+  node_t *node = primary();
+  
+  for(;;) {
+    if(consume('*')) {
+      node = new_node(ND_MUL, node, primary());
+    }
+    else if(consume('/')) {
+      node = new_node(ND_DIV, node, primary());
+    }
+    else
+      return node;
+  }
+}
+
+node_t *primary() {
+  // if next token is '(', next node would be `( <expr> )`
+  if(consume('(')) {
+    node_t *node = expr();
+    expect(')');
+    return node;
+  }
+  
+  // other, node would be number
+  return new_node_num(expect_number());
+}
+
+
+void gen(node_t *node) {
+  if(node->kind == ND_NUM) {
+    printf("\tpush %d\n", node->val);
+    return;
+  }
+
+  gen(node->lhs);
+  gen(node->rhs);
+
+  printf("\tpop rdi\n");
+  printf("\tpop rax\n");
+
+  switch(node->kind) {
+    case ND_ADD:
+      printf("\tadd rax, rdi\n");
+      break;
+    case ND_SUB:
+      printf("\tsub rax, rdi\n");
+      break;
+    case ND_MUL:
+      printf("\timul rax, rdi\n");
+      break;
+    case ND_DIV:
+      printf("\tcqo\n");
+      printf("\tidiv rdi\n");
+      break;
+  }
+  
+  printf("\tpush rax\n");
+}
+
 int main(int argc, char **argv) {
   if(argc != 2) {
     fprintf(stderr, "ERROR!: Number of args == 2");
     return 1;
   }
+
+  // tokenize and parse
   user_input = argv[1];
   token = tokenize(user_input);
+  node_t *node = expr();
 
   // output a first half of assembry
   printf(".intel_syntax noprefix\n");
   printf(".globl main\n");
   printf("main:\n");
+  
+  gen(node);
 
-  // check if first expresstion is number and output mov instruction
-  printf("\tmov rax, %d\n", expect_number());
-
-  // consume token of `+ <num>` or `- <num>` and output it
-  while(!at_eof()) {
-    if(consume('+')) {
-      printf("\tadd rax, %d\n", expect_number());
-      continue;
-    }
-    expect('-');
-    printf("\tsub rax, %d\n", expect_number());
-  }
-
+  // load stack top that is expresstion value to rax register as return value
+  printf("\tpop rax\n");
   printf("\tret\n");
   return 0;
 }
