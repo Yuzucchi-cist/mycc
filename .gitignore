@@ -1,6 +1,6 @@
 *~
 *.o
+*.d
 tmp*
 a.out
 mycc
-db_mycc

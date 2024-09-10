@@ -1,17 +1,25 @@
-CFLAGS=-std=c11 -g -static
+TARGET:=mycc
+INCDIR:=./lib
+SRCS:=$(wildcard *.c) $(wildcard $(INCDIR)/*.c)
+OBJS:=$(SRCS:%.c=%.o)
+DEPS:=$(SRCS:%.c=%.d)
 
-mycc: mycc.c
+CFLAGS=-std=c11 -g -static -I $(INCDIR)
 
-db_mycc: mycc.c
-	cc -g -O0 mycc.c -o db_mycc
+all: $(TARGET)
 
-test: mycc
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+.c.o:
+
+test: $(TARGET)
 	./test.sh
 
-debug: db_mycc
-	gdb ./db_mycc
+debug: $(TARGET)
+	gdb $^
 
 clean:
-	rm -f mycc *.o *~ tmp* db_mycc
+	rm -f $(TARGET) $(OBJS) $(DEPS) tmp*
 
 .PHONY: test debug clean
