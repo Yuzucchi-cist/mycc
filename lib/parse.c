@@ -14,6 +14,15 @@ bool consume(char *op) {
   return true;
 }
 
+// if next token is identifier token, returns true and read next token
+// other, return false
+token_t *consume_ident() {
+  if (token->kind != TK_IDENT) return 0;
+  token_t *tok = token;
+  token = token->next;
+  return tok;
+}
+
 // if next token is expected token, returns true and read next token
 // other, throws error
 void expect(char *op) {
@@ -76,7 +85,7 @@ token_t *tokenize(char *p) {
     }
     
     // single-letter punctuator
-    if(strchr("+-*/()<>", *p)) {
+    if(strchr("+-*/()<>=;", *p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
@@ -87,6 +96,12 @@ token_t *tokenize(char *p) {
       char *q = p;
       cur->val = strtol(p, &p, 10);
       cur->len = p - q;
+      continue;
+    }
+
+    // alphabet literal
+    if('a' <= *p && *p <= 'z') {
+      cur = new_token(TK_IDENT, cur, p++, 1);
       continue;
     }
 

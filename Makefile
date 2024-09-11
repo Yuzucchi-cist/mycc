@@ -1,10 +1,11 @@
 TARGET:=mycc
-INCDIR:=./lib
-SRCS:=$(wildcard *.c) $(wildcard $(INCDIR)/*.c)
+INCDIR:=lib
+SRCS:=$(wildcard *.c) $(filter-out $(INCDIR)/codegen_test.c, $(wildcard $(INCDIR)/*.c))
 OBJS:=$(SRCS:%.c=%.o)
 DEPS:=$(SRCS:%.c=%.d)
+TESTS:=$(wildcard *_test.c) $(wildcard $(INCDIR)/*_test.c)
 
-CFLAGS=-std=c11 -g -static -I $(INCDIR)
+CFLAGS:=-std=c11 -g -static -I $(INCDIR)
 
 all: $(TARGET)
 
@@ -15,6 +16,11 @@ $(TARGET): $(OBJS)
 
 test: $(TARGET)
 	./test.sh
+
+$(TESTS:%.c=%): $(TESTS:%.c=%.o) $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $< $(filter-out main.o, $(OBJS))
+utest: $(TESTS:%.c=%)
+	./$^
 
 debug: $(TARGET)
 	gdb $^

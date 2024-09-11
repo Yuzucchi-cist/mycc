@@ -11,6 +11,7 @@
 // kind of token
 typedef enum {
   TK_RESERVED, // symbol
+  TK_IDENT, // identifier
   TK_NUM, // integer
   TK_EOF, // token presented input end
 } TokenKind;
@@ -30,6 +31,10 @@ extern token_t *token;
 // if next token is expected token, returns true and read next token
 // other, return false
 bool consume(char *op);
+
+// if next token is identifier token, returns true and read next token
+// other, return false
+token_t *consume_ident();
 
 // if next token is expected token, returns true and read next token
 // other, throws error
