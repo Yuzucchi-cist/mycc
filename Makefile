@@ -1,6 +1,6 @@
 TARGET:=mycc
 INCDIR:=lib
-SRCS:=$(wildcard *.c) $(filter-out $(INCDIR)/codegen_test.c, $(wildcard $(INCDIR)/*.c))
+SRCS:=$(wildcard *.c) $(filter-out $(wildcard $(INCDIR)/*_test.c), $(wildcard $(INCDIR)/*.c))
 OBJS:=$(SRCS:%.c=%.o)
 DEPS:=$(SRCS:%.c=%.d)
 TESTS:=$(wildcard *_test.c) $(wildcard $(INCDIR)/*_test.c)
