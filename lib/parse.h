@@ -28,6 +28,19 @@ struct _token_t {
 
 extern token_t *token;
 
+typedef struct lvar_t lvar_t;
+
+// local variable type
+struct lvar_t {
+  char *name; // variable name
+  int len; // length of variable name
+  int offset; // offset from RBP
+  lvar_t *next; // next variable or NULL
+};
+
+// local variable
+extern lvar_t *locals;
+
 // if next token is expected token, returns true and read next token
 // other, return false
 bool consume(char *op);
@@ -53,6 +66,10 @@ token_t *new_token(TokenKind kind, token_t *cur, char *str, int len);
 
 // tokenize input string p and return it
 token_t *tokenize(char *p);
+
+// find variable by name
+// return null if variable is not found
+lvar_t *find_lvar(token_t *tok);
 
 // abstruct syntax tree kind
 typedef enum {

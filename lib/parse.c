@@ -1,6 +1,7 @@
 #include "parse.h"
 
 token_t *token;
+lvar_t *locals;
 
 // if next token is expected token, returns true and read next token
 // other, return false
@@ -101,7 +102,11 @@ token_t *tokenize(char *p) {
 
     // alphabet literal
     if('a' <= *p && *p <= 'z') {
-      cur = new_token(TK_IDENT, cur, p++, 1);
+      int lvar_len = 0;
+      for(char *q = p; 'a' <= *q && *q <= 'z' && *q != '\0'; q++) lvar_len++;
+
+      cur = new_token(TK_IDENT, cur, p, lvar_len);
+      p += lvar_len;
       continue;
     }
 
@@ -110,6 +115,15 @@ token_t *tokenize(char *p) {
 
   new_token(TK_EOF, cur, p, 0);
   return head.next;
+}
+
+// find variable by name
+// return null if variable is not found
+lvar_t *find_lvar(token_t *tok) {
+  for(lvar_t *var = locals; var; var = var->next)
+    if(var->len == tok->len && !memcmp(tok->str, var->name, var->len))
+      return var;
+  return NULL;
 }
 
 node_t *new_node(NodeKind kind, node_t *lhs, node_t *rhs) {
@@ -240,7 +254,25 @@ node_t *primary() {
 
   // if next token is identifier
   token_t *tok = consume_ident();
-  if(tok) return new_node_lvar(tok->str[0]);
+  if(tok) {
+    node_t *node = calloc(1, sizeof(node_t));
+    node->kind = ND_LVAR;
+
+    lvar_t *lvar = find_lvar(tok);
+    if(lvar)
+      node->offset = lvar->offset;
+    else {
+      lvar = calloc(1, sizeof(lvar));
+      lvar->name = tok->str;
+      lvar->len = tok->len;
+      if(!locals) lvar->offset = 8;
+      else lvar->offset = locals->offset + 8;
+      node->offset = lvar->offset;
+      lvar->next = locals;
+      locals = lvar;
+    }
+    return node;
+  }
   
   // other, node would be number
   return new_node_num(expect_number());

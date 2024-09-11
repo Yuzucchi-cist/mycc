@@ -34,5 +34,6 @@ assert 0 "10!=10;"
 assert 0 "a=0;"
 assert 1 "a=b=1;"
 assert 2 "a=1;b=1;a+b;"
+assert 2 "a=1;ab=1;a+ab;"
 
 echo OK
