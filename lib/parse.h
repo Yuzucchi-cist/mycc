@@ -12,6 +12,7 @@
 typedef enum {
   TK_RESERVED, // symbol
   TK_IDENT, // identifier
+  TK_RETURN, // return
   TK_NUM, // integer
   TK_EOF, // token presented input end
 } TokenKind;
@@ -59,6 +60,9 @@ int expect_number();
 
 bool start_with(char *p, char *q);
 
+// is token charactor(alphabet, number, or underscore
+bool is_alnum(char c);
+
 bool at_eof();
 
 // create new token and link the token to cur
@@ -82,6 +86,7 @@ typedef enum {
   ND_LT, // <
   ND_LE, // <=
   ND_ASSIGN, // =
+  ND_RETURN, // return
   ND_LVAR, // local variable
   ND_NUM, // integer
 } NodeKind;
@@ -106,7 +111,7 @@ extern node_t *code[100];
 // program = stmt*
 node_t *program();
 
-// stmt = expr ";"
+// stmt = expr ";" | "return" expr ";"
 node_t *stmt();
 
 // expr = assign

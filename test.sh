@@ -35,5 +35,7 @@ assert 0 "a=0;"
 assert 1 "a=b=1;"
 assert 2 "a=1;b=1;a+b;"
 assert 2 "a=1;ab=1;a+ab;"
+assert 4 "a=1;ab=1;a+3;"
+assert 2 "a=1;ab=1;return a+ab;a+3;"
 
 echo OK

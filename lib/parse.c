@@ -6,7 +6,7 @@ lvar_t *locals;
 // if next token is expected token, returns true and read next token
 // other, return false
 bool consume(char *op) {
-  if (token->kind != TK_RESERVED ||
+  if ((token->kind != TK_RESERVED && token->kind != TK_RETURN) ||
     token->len != strlen(op) ||
     memcmp(token->str, op, token->len)
   )
@@ -46,6 +46,14 @@ int expect_number() {
 
 bool start_with(char *p, char *q) {
   return memcmp(p, q, strlen(q)) == 0;
+}
+
+// is token charactor(alphabet, number, or underscore
+bool is_alnum(char c) {
+  return ('a' <= c && c <= 'z') ||
+         ('A' <= c && c <= 'Z') ||
+         ('0' <= c && c <= '9') ||
+         (c == '_');
 }
 
 bool at_eof() {
@@ -97,6 +105,13 @@ token_t *tokenize(char *p) {
       char *q = p;
       cur->val = strtol(p, &p, 10);
       cur->len = p - q;
+      continue;
+    }
+    
+    // return statement
+    if(!strncmp(p, "return", 6) && !is_alnum(p[6])) {
+      cur = new_token(TK_RETURN, cur, p, 6);
+      p += 6;
       continue;
     }
 
@@ -157,9 +172,17 @@ node_t *program() {
   code[i] = NULL;
 }
 
-// stmt = expr ";"
+// stmt = expr ";" | "return" expr ";"
 node_t *stmt() {
-  node_t *node = expr();
+    node_t *node;
+  if(consume("return")) {
+    node = calloc(1, sizeof(node_t));
+    node->kind = ND_RETURN;
+    node->lhs = expr();
+  } else {
+    node = expr();
+  }
+
   expect(";");
   return node;
 }
