@@ -306,6 +306,7 @@ node_t *equality() {
     return node;
 }
 
+// relational = add ("<" add | "<=" add | ">" add | ">=" add)*
 node_t *relational() {
   node_t *node = add();
 
@@ -321,6 +322,7 @@ node_t *relational() {
     return node;
 }
 
+// add = mul ("+" mul | "-" mul)*
 node_t *add() {
   node_t *node = mul();
 
@@ -336,6 +338,7 @@ node_t *add() {
   }
 }
 
+// mul = unary ("*" unary | "/" unary)*
 node_t *mul() {
   node_t *node = unary();
   
@@ -351,6 +354,7 @@ node_t *mul() {
   }
 }
 
+// unary = ("+" | "-")? primary
 node_t *unary() {
   if(consume("+"))
     return primary();
@@ -359,6 +363,7 @@ node_t *unary() {
   return primary();
 }
 
+// primary = num | "(" expr ")"
 node_t *primary() {
   // if next token is '(', next node would be `( <expr> )`
   if(consume("(")) {

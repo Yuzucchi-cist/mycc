@@ -129,36 +129,24 @@ node_t *new_node_num(int val);
 
 extern node_t *code[100];
 
-// program = stmt*
 node_t *program();
 
-// stmt = expr ";"
-//      | "return" expr ";"
-//      | "if" "(" expr ")" stmt ("else" stmt)?
 node_t *stmt();
 
-// expr = assign
 node_t *expr();
 
-// assign = equality ("=" assign)?
 node_t *assign();
 
-// equality = relational ("==" relational | "!=" relational)*
 node_t *equality();
 
-// relational = add ("<" add | "<=" add | ">" add | ">=" add)*
 node_t *relational();
 
-// add = mul ("+" mul | "-" mul)*
 node_t *add();
 
-// mul = unary ("*" unary | "/" unary)*
 node_t *mul();
 
-// unary = ("+" | "-")? primary
 node_t *unary();
 
-// primary = num | "(" expr ")"
 node_t *primary();
 
 #endif
