@@ -95,6 +95,7 @@ typedef enum {
   ND_ELSE, // else statement
   ND_WHILE, // while statement
   ND_FOR, // for statement
+  ND_BLOCK, // {}
   ND_LVAR, // local variable
   ND_NUM, // integer
 } NodeKind;
@@ -113,6 +114,9 @@ struct _node_t {
   node_t *els;
   node_t *init;
   node_t *adv;
+
+  // block statement
+  node_t *stmt;
 
   int val; // use if kind is ND_NUM
   int offset; // use if kind is ND_LVAR

@@ -41,5 +41,7 @@ assert 1 "if(3 >= 0)  return 1; else  return 2;"
 assert 2 "if(3 <= 0)  return 1; else  return 2;"
 assert 10 "i=0;while(i < 10)  i=i+1;return i;"
 assert 10 "j=0; for(i=0; i<10; i=i+1) j=j+1; return j;"
+assert 10 "{10;}"
+assert 30 "j=0;k=0; for(i=0; i<10; i=i+1){ j=j+1;k=k+2;} return j+k;"
 
 echo OK

@@ -109,7 +109,7 @@ token_t *tokenize(char *p) {
     }
     
     // single-letter punctuator
-    if(strchr("+-*/()<>=;", *p)) {
+    if(strchr("+-*/(){}<>=;", *p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
@@ -213,13 +213,25 @@ node_t *program() {
 }
 
 // stmt = expr ";"
+//      | "{" stmt* "}"
 //      | "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
 //      | "for" "(" expr ";" expr ";" expr ")" stmt
 node_t *stmt() {
-    node_t *node;
-  if(consume_statement(TK_RETURN)) {
+  node_t *node;
+  if(consume("{")) {
+    node = calloc(1, sizeof(node_t));
+    node->kind = ND_BLOCK;
+    
+    node_t *bstmt = node;
+
+    while(!consume("}")) {
+      bstmt->stmt = stmt();
+      bstmt = bstmt->stmt;
+    }
+    bstmt->stmt = NULL;
+  } else if(consume_statement(TK_RETURN)) {
     node = calloc(1, sizeof(node_t));
     node->kind = ND_RETURN;
     node->lhs = expr();

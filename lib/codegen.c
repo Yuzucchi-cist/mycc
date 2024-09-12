@@ -14,6 +14,15 @@ int elseLabelCnt = 0;
 
 void gen(node_t *node) {
   switch(node->kind) {
+    case ND_BLOCK:
+      while(node->stmt) {
+        gen(node->stmt);
+        node = node->stmt;
+        printf("\tpop rax\n");
+      }
+      printf("\tpush rax\n");
+      return;
+
     case ND_RETURN:
       gen(node->lhs);
       printf("\tpop rax\n");
