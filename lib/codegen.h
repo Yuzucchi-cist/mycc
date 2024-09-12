@@ -6,6 +6,7 @@
 extern int beginLabelCnt;
 extern int endLabelCnt;
 extern int elseLabelCnt;
+extern int localNum;
 
 void gen_lval(node_t *node);
 void gen(node_t *node);

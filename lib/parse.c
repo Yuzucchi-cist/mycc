@@ -1,6 +1,8 @@
 #include "parse.h"
 
-lvar_t *locals;
+lvar_t *locals = NULL;
+func_t *funcs = NULL;
+
 // find variable by name
 // return null if variable is not found
 lvar_t *find_lvar(token_t *tok) {
@@ -25,10 +27,23 @@ node_t *new_node_num(int val) {
   return node;
 }
 
-node_t *new_node_lvar(char str) {
+node_t *new_node_lvar(token_t *tok) {
   node_t *node = calloc(1, sizeof(node_t));
   node->kind = ND_LVAR;
-  node->offset = (str - 'a' + 1) * 8;
+
+  lvar_t *lvar = find_lvar(tok);
+  if(lvar)
+    node->offset = lvar->offset;
+  else {
+    lvar = calloc(1, sizeof(lvar));
+    lvar->name = tok->str;
+    lvar->len = tok->len;
+    if(!locals) lvar->offset = 8;
+    else lvar->offset = locals->offset + 8;
+    node->offset = lvar->offset;
+    lvar->next = locals;
+    locals = lvar;
+  }
   return node;
 }
 
@@ -37,8 +52,60 @@ node_t *code[100];
 node_t *program() {
   int i=0;
   while(!at_eof())
-    code[i++] = stmt();
+    code[i++] = func();
+//    code[i++] = stmt();
   code[i] = NULL;
+}
+
+// func = ident "(" (ident ",")* ")" "{" stmt "}"
+node_t *func() {
+  node_t *node = calloc(1, sizeof(node_t));
+  node->kind = ND_FUNC;
+
+  token_t *funcTok = consume_ident();
+  node->name = calloc(1, sizeof(char) * funcTok->len);
+  strncpy(node->name, funcTok->str, funcTok->len);
+  node->name[funcTok->len] = '\0';
+
+  expect("(");
+  if(!consume(")")) {
+    node_t *arg = node;
+    for(;;) {
+      arg->arg = new_node_lvar(consume_ident());
+      arg = arg->arg;
+      node->argLen++;
+      if(consume(")"))  break;
+      else expect(",");
+    }
+    arg->arg = NULL;
+  }
+
+  expect("{");
+  node->stmt = new_block_stmt();
+  
+  if(funcs==NULL) funcs = calloc(1, sizeof(func_t));
+  else {
+    func_t *f = calloc(1, sizeof(func_t));
+    f->next = funcs;
+    funcs = f;
+  }
+  funcs->name = node->name;
+
+  return node;
+}
+
+node_t *new_block_stmt() {
+  node_t *node = calloc(1, sizeof(node_t));
+  node->kind = ND_BLOCK;
+  
+  node_t *bstmt = node;
+
+  while(!consume("}")) {
+    bstmt->stmt = stmt();
+    bstmt = bstmt->stmt;
+  }
+  bstmt->stmt = NULL;
+  return node;
 }
 
 // stmt = expr ";"
@@ -49,17 +116,9 @@ node_t *program() {
 //      | "for" "(" expr ";" expr ";" expr ")" stmt
 node_t *stmt() {
   node_t *node;
-  if(consume("{")) {
-    node = calloc(1, sizeof(node_t));
-    node->kind = ND_BLOCK;
-    
-    node_t *bstmt = node;
 
-    while(!consume("}")) {
-      bstmt->stmt = stmt();
-      bstmt = bstmt->stmt;
-    }
-    bstmt->stmt = NULL;
+  if(consume("{")) {
+    node = new_block_stmt();
   } else if(consume_statement(TK_RETURN)) {
     node = calloc(1, sizeof(node_t));
     node->kind = ND_RETURN;
@@ -205,44 +264,27 @@ node_t *primary() {
 
   // if next token is identifier
   token_t *tok = consume_ident();
-  
-  // if next token of identifier is '(', next node would be function
-  if(consume("(")) {
-    node_t *node = calloc(1, sizeof(node_t));
-    node->kind = ND_FUNC;
-    if(!consume(")")) {
-      node_t *arg = node;
-      for(;;) {
-        arg->arg = primary();
-        arg = arg->arg;
-        if(consume(")"))  break;
-        else  expect(",");
-      }
-    }
-    node->name = tok->str;
-    strncpy(node->name, tok->str, tok->len);
-    node->name[tok->len] = '\0';
-    return node;
-  }
-
   if(tok) {
-    node_t *node = calloc(1, sizeof(node_t));
-    node->kind = ND_LVAR;
-
-    lvar_t *lvar = find_lvar(tok);
-    if(lvar)
-      node->offset = lvar->offset;
-    else {
-      lvar = calloc(1, sizeof(lvar));
-      lvar->name = tok->str;
-      lvar->len = tok->len;
-      if(!locals) lvar->offset = 8;
-      else lvar->offset = locals->offset + 8;
-      node->offset = lvar->offset;
-      lvar->next = locals;
-      locals = lvar;
+    // if next token of identifier is '(', next node would be function
+    if(consume("(")) {
+      node_t *node = calloc(1, sizeof(node_t));
+      node->kind = ND_CALL;
+      if(!consume(")")) {
+        node_t *arg = node;
+        for(;;) {
+          arg->arg = primary();
+          arg = arg->arg;
+          if(consume(")"))  break;
+          else  expect(",");
+        }
+      }
+      node->name = calloc(1, sizeof(char) * tok->len);
+      strncpy(node->name, tok->str, tok->len);
+      node->name[tok->len] = '\0';
+      return node;
     }
-    return node;
+
+    return new_node_lvar(tok);
   }
   
   // other, node would be number

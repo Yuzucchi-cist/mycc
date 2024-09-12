@@ -2,7 +2,7 @@
 
 void gen_lval(node_t *node) {
   if (node->kind != ND_LVAR)
-    error("lhs of assignment is not variable");
+    error("lhs of assignment is not variable, but got %d", node->kind);
   printf("\tmov rax, rbp\n");
   printf("\tsub rax, %d\n", node->offset);
   printf("\tpush rax\n");
@@ -12,7 +12,59 @@ int beginLabelCnt = 0;
 int endLabelCnt = 0;
 int elseLabelCnt = 0;
 
+int localNum = 0;
+
 void gen(node_t *node) {
+  if(node->kind == ND_FUNC) {
+    printf("%s:\n", node->name);
+    // prologue
+    // allocate area of 26 variables
+    printf("\tpush rbp\n");
+    printf("\tmov rbp, rsp\n");
+    printf("\tsub rsp, %d\n", localNum * 8);
+
+    int argNum = 0;
+    for(node_t *arg = node->arg; arg; arg = arg->arg, argNum++) {
+      gen_lval(arg);
+      printf("\tpop rax\n\n");
+      switch(argNum) {
+        case 0:
+          //printf("\tpush rdi\n");
+          printf("\tmov [rax], rdi\n");
+          break;
+        case 1:
+          // printf("\tpush rsi\n");
+          printf("\tmov [rax], rsi\n");
+          break;
+        case 2:
+          // printf("\tpush rdx\n");
+          printf("\tmov [rax], rdx\n");
+          break;
+        case 3:
+          // printf("\tpush rcx\n");
+          printf("\tmov [rax], rcx\n");
+          break;
+        case 4:
+          // printf("\tpush r8\n");
+          printf("\tmov [rax], r8\n");
+          break;
+        case 5:
+          // printf("\tpush r9\n");
+          printf("\tmov [rax], r9\n");
+          break;
+      }
+    }
+
+    gen(node->stmt);
+    // pop stack top that is expresstion value to avoid stack overflow
+    printf("\tpop rax\n");
+    // rax is last expresstion value and it is return value
+    printf("\tmov rsp, rbp\n");
+    printf("\tpop rbp\n");
+    printf("\tret\n");
+    return;
+  }
+
   switch(node->kind) {
     case ND_BLOCK:
       while(node->stmt) {
@@ -75,7 +127,7 @@ void gen(node_t *node) {
   }
 
   switch(node->kind) {
-    case ND_FUNC:
+    case ND_CALL:
       int argNum = 0;
       for(node_t *arg = node->arg; arg; arg = arg->arg, argNum++) {
         gen(arg);

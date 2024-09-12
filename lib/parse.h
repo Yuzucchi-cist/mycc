@@ -25,7 +25,8 @@ typedef enum {
   ND_WHILE, // while statement
   ND_FOR, // for statement
   ND_BLOCK, // {}
-  ND_FUNC, // function statement
+  ND_CALL, // call function statement
+  ND_FUNC, // defined function statement
   ND_LVAR, // local variable
   ND_NUM, // integer
 } NodeKind;
@@ -45,12 +46,11 @@ struct _node_t {
   node_t *init;
   node_t *adv;
 
-  // block statement
-  node_t *stmt;
-
   // function statement
   char *name;
   node_t *arg;
+  int argLen;
+  node_t *stmt;
 
   int val; // use if kind is ND_NUM
   int offset; // use if kind is ND_LVAR
@@ -66,8 +66,17 @@ struct lvar_t {
   lvar_t *next; // next variable or NULL
 };
 
+typedef struct func_t func_t;
+
+// function type
+struct func_t {
+  char *name;
+  func_t *next;
+};
+
 extern node_t *code[100];
 extern lvar_t *locals;
+extern func_t *funcs;
 
 lvar_t *find_lvar(token_t *tok);
 
@@ -75,7 +84,13 @@ node_t *new_node(NodeKind kind, node_t *lhs, node_t *rhs);
 
 node_t *new_node_num(int val);
 
+node_t *new_node_lvar(token_t *tok);
+
 node_t *program();
+
+node_t *func();
+
+node_t *new_block_stmt();
 
 node_t *stmt();
 

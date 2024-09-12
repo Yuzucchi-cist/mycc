@@ -18,25 +18,24 @@ int main(int argc, char **argv) {
 
   // output a first half of assembry
   printf(".intel_syntax noprefix\n");
-  printf(".globl main\n");
-  printf("main:\n");
 
-  // prologue
-  // allocate area of 26 variables
-  printf("\tpush rbp\n");
-  printf("\tmov rbp, rsp\n");
-  printf("\tsub rsp, 208\n");
+  func_t *f = funcs;
+  printf(".globl ");
+  for(;;) {
+    printf("%s", f->name);
+    f = f->next;
+    if(f)  printf(", ");
+    else break;
+  }
+  printf("\n");
 
+  for(localNum=0; locals; locals=locals->next)  localNum++;
+
+  
   for (int i=0; code[i]; i++) {
     gen(code[i]);
 
-    // pop stack top that is expresstion value to avoid stack overflow
-    printf("\tpop rax\n");
   }
 
-  // rax is last expresstion value and it is return value
-  printf("\tmov rsp, rbp\n");
-  printf("\tpop rbp\n");
-  printf("\tret\n");
   return 0;
 }

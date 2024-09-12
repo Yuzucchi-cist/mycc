@@ -13,6 +13,12 @@ char *node_kind_to_string(NodeKind kind) {
   else if(kind == ND_LT)  return "<";
   else if(kind == ND_LE)  return "<=";
   else if(kind == ND_ASSIGN)  return "=";
+  else if(kind == ND_BLOCK) return "{}";
+  else if(kind == ND_FOR) return "for";
+  else if(kind == ND_CALL)  return "call";
+  else if(kind == ND_FUNC) return "func";
+  else if(kind == ND_RETURN) return "ret";
+  else return "?";
 }
 
 void print_node(node_t *node, int layer) {
@@ -21,31 +27,84 @@ void print_node(node_t *node, int layer) {
     return;
   }
   if(node->kind == ND_LVAR) {
-    char t = (char)('a' + (node->offset)/8 -1);
-    printf("%c\n", t);
+    char c = (char)('a' + (node->offset / 8) - 1);
+    printf("%c\n", c);
     return;
   }
-  printf("%s\n", node_kind_to_string(node->kind));
-  for(int i=0; i<layer; i++)  printf("  ");
-  printf("|-");
-  print_node(node->lhs, layer+1);
-  printf("\n");
-  for(int i=0; i<layer; i++)  printf("  ");
-  printf("|-");
-  print_node(node->rhs, layer+1);
+  if(node->kind == ND_FOR) {
+    printf("%s\n", node_kind_to_string(node->kind));
+    for(int i=0; i<layer; i++)  printf("  ");
+    printf("|- ");
+    print_node(node->init, layer+1);
+    printf("\n");
+    for(int i=0; i<layer; i++)  printf("  ");
+    printf("|- ");
+    print_node(node->cond, layer+1);
+    printf("|- ");
+    print_node(node->adv, layer+1);
+    printf("|- ");
+    print_node(node->then, layer+1);
+  } else if(node->kind == ND_BLOCK) {
+    printf("%s\n", node_kind_to_string(node->kind));
+    while(node->stmt) {
+      for(int i=0; i<layer; i++)  printf("  ");
+      printf("|- ");
+      print_node(node->stmt, layer+1);
+      node=node->stmt;
+    }
+  } else if(node->kind == ND_FUNC) {
+    printf("%s\n", node_kind_to_string(node->kind));
+    node_t *arg = node->arg;
+    while(arg) {
+      for(int i=0; i<layer; i++)  printf("  ");
+      printf("|- ");
+      print_node(arg, layer+1);
+      arg=arg->arg;
+    }
+    for(int i=0; i<layer; i++)  printf("  ");
+    printf("|- ");
+    print_node(node->stmt, layer+1);
+    printf("\n");
+  } else if(node->kind == ND_CALL) {
+    printf("%s\n", node_kind_to_string(node->kind));
+    node_t *arg = node->arg;
+    while(arg) {
+      for(int i=0; i<layer; i++)  printf("  ");
+      printf("|- ");
+      print_node(arg, layer+1);
+      arg=arg->arg;
+    }
+  } else if(node->kind == ND_RETURN) {
+    printf("%s\n", node_kind_to_string(node->kind));
+    for(int i=0; i<layer; i++)  printf("  ");
+    printf("|- ");
+    print_node(node->lhs, layer+1);
+  } else {
+    printf("%s\n", node_kind_to_string(node->kind));
+    for(int i=0; i<layer; i++)  printf("  ");
+    printf("|- ");
+    print_node(node->lhs, layer+1);
+    for(int i=0; i<layer; i++)  printf("  ");
+    printf("|- ");
+    print_node(node->rhs, layer+1);
+  }
 }
 
 bool statement_test(char *test_statement) {
   printf("%s\n", test_statement);
   token = tokenize(test_statement);
-  node_t *node = stmt();
-
-  print_node(node, 0);
+  node_t *node = program();
+  for(int i=0; code[i]; i++) {
+    print_node(code[i], 0);
+  }
   printf("\n\n");
 }
 
 int main() {
-  statement_test("1+2;");
-  statement_test("1+3*2*(3+4)+5;");
-  statement_test("a=0;");
+  statement_test("func() {1+2;}");
+  statement_test("func() {1+3*2*(3+4)+5;}");
+  statement_test("func() {a=0;}");
+  statement_test("func() {for(i=0;i<10;i=i+1) { k+1; }}");
+  statement_test("func(i, j) {funca(a, 1);}");
+  statement_test("main() { a=2;return foo(1, a);} foo(b, c) {return b+c;}");
 }
