@@ -13,6 +13,10 @@ typedef enum {
   TK_RESERVED, // symbol
   TK_IDENT, // identifier
   TK_RETURN, // return
+  TK_IF, // if
+  TK_ELSE, // else
+  TK_WHILE, // while
+  TK_FOR, // for
   TK_NUM, // integer
   TK_EOF, // token presented input end
 } TokenKind;
@@ -86,7 +90,11 @@ typedef enum {
   ND_LT, // <
   ND_LE, // <=
   ND_ASSIGN, // =
-  ND_RETURN, // return
+  ND_RETURN, // return statement
+  ND_IF, // if statement
+  ND_ELSE, // else statement
+  ND_WHILE, // while statement
+  ND_FOR, // for statement
   ND_LVAR, // local variable
   ND_NUM, // integer
 } NodeKind;
@@ -98,9 +106,18 @@ struct _node_t {
   NodeKind kind; // node type
   node_t *lhs; // left hand side expresstion
   node_t *rhs; // right hand side expresstion
+
+  // if or for statement
+  node_t *cond;
+  node_t *then;
+  node_t *els;
+  node_t *init;
+  node_t *adv;
+
   int val; // use if kind is ND_NUM
   int offset; // use if kind is ND_LVAR
 };
+
 
 node_t *new_node(NodeKind kind, node_t *lhs, node_t *rhs);
 
@@ -111,7 +128,9 @@ extern node_t *code[100];
 // program = stmt*
 node_t *program();
 
-// stmt = expr ";" | "return" expr ";"
+// stmt = expr ";"
+//      | "return" expr ";"
+//      | "if" "(" expr ")" stmt ("else" stmt)?
 node_t *stmt();
 
 // expr = assign

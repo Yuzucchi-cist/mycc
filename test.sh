@@ -37,5 +37,9 @@ assert 2 "a=1;b=1;a+b;"
 assert 2 "a=1;ab=1;a+ab;"
 assert 4 "a=1;ab=1;a+3;"
 assert 2 "a=1;ab=1;return a+ab;a+3;"
+assert 1 "if(3 >= 0)  return 1; else  return 2;"
+assert 2 "if(3 <= 0)  return 1; else  return 2;"
+assert 10 "i=0;while(i < 10)  i=i+1;return i;"
+assert 10 "j=0; for(i=0; i<10; i=i+1) j=j+1; return j;"
 
 echo OK

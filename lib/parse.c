@@ -6,13 +6,23 @@ lvar_t *locals;
 // if next token is expected token, returns true and read next token
 // other, return false
 bool consume(char *op) {
-  if ((token->kind != TK_RESERVED && token->kind != TK_RETURN) ||
+  if (token->kind != TK_RESERVED ||
     token->len != strlen(op) ||
     memcmp(token->str, op, token->len)
   )
     return false;
   token = token->next;
   return true;
+}
+
+// if next token is expected statement, returns true and read next token
+// other, return false
+bool consume_statement(TokenKind kind) {
+  if(token->kind == kind) {
+    token = token->next;
+    return true;
+  }
+  return false;
 }
 
 // if next token is identifier token, returns true and read next token
@@ -70,6 +80,11 @@ token_t *new_token(TokenKind kind, token_t *cur, char *str, int len) {
   return tok;
 }
 
+bool is_statement(char *p, char *statement) {
+  int len = strlen(statement);
+  return !strncmp(p, statement, len) && !is_alnum(p[len]);
+}
+
 // tokenize input string p and return it
 token_t *tokenize(char *p) {
   token_t head;
@@ -109,9 +124,34 @@ token_t *tokenize(char *p) {
     }
     
     // return statement
-    if(!strncmp(p, "return", 6) && !is_alnum(p[6])) {
+    if(is_statement(p, "return")) {
       cur = new_token(TK_RETURN, cur, p, 6);
       p += 6;
+      continue;
+    }
+
+    // control statement
+    if(is_statement(p, "if")) {
+      cur = new_token(TK_IF, cur, p, 2);
+      p += 2;
+      continue;
+    }
+
+    if(is_statement(p, "else")) {
+      cur = new_token(TK_ELSE, cur, p, 4);
+      p += 4;
+      continue;
+    }
+
+    if(is_statement(p, "while")) {
+      cur = new_token(TK_WHILE, cur, p, 5);
+      p += 5;
+      continue;
+    }
+
+    if(is_statement(p, "for")) {
+      cur = new_token(TK_FOR, cur, p, 3);
+      p += 3;
       continue;
     }
 
@@ -172,18 +212,58 @@ node_t *program() {
   code[i] = NULL;
 }
 
-// stmt = expr ";" | "return" expr ";"
+// stmt = expr ";"
+//      | "return" expr ";"
+//      | "if" "(" expr ")" stmt ("else" stmt)?
+//      | "while" "(" expr ")" stmt
+//      | "for" "(" expr ";" expr ";" expr ")" stmt
 node_t *stmt() {
     node_t *node;
-  if(consume("return")) {
+  if(consume_statement(TK_RETURN)) {
     node = calloc(1, sizeof(node_t));
     node->kind = ND_RETURN;
     node->lhs = expr();
+    expect(";");
+  } else if(consume_statement(TK_IF)) {
+    node = calloc(1, sizeof(node_t));
+    node->kind = ND_IF;
+
+    consume("(");
+    node->cond = expr();
+    consume(")");
+
+    node->then = stmt();
+
+    if(consume_statement(TK_ELSE))
+      node->els = stmt();
+    else  node->els = NULL;
+  } else if(consume_statement(TK_WHILE)) {
+    node = calloc(1, sizeof(node_t));
+    node->kind = ND_WHILE;
+
+    consume("(");
+    node->cond = expr();
+    consume(")");
+    
+    node->then = stmt();
+  } else if(consume_statement(TK_FOR)) {
+    node = calloc(1, sizeof(node_t));
+    node->kind = ND_FOR;
+    
+    consume("(");
+    node->init = expr();
+    consume(";");
+    node->cond = expr();
+    consume(";");
+    node->adv = expr();
+    consume(")");
+
+    node->then = stmt();
   } else {
     node = expr();
+    expect(";");
   }
 
-  expect(";");
   return node;
 }
 
