@@ -9,7 +9,7 @@ int foo() {
 }
 
 int bar(int a, int b) {
-  printf(\"called bar: arg1:%d, arg2:%d\", a, b);
+  printf(\"called bar: arg1:%d, arg2:%d\n\", a, b);
   return a+b;
 }
   " > $func.c
@@ -66,6 +66,8 @@ assert 10 "i=0;while(i < 10)  i=i+1;return i;"
 assert 10 "j=0; for(i=0; i<10; i=i+1) j=j+1; return j;"
 assert 10 "{10;}"
 assert 30 "j=0;k=0; for(i=0; i<10; i=i+1){ j=j+1;k=k+2;} return j+k;"
-assert_func 1 "foo();" "foo"
+assert_func 1 "foo();"
+assert_func 3 "bar(1, 2);"
+assert_func 2 "a=0;b=2; bar(a, b);"
 
 echo OK

@@ -193,7 +193,7 @@ node_t *unary() {
 }
 
 // primary = num
-//         | ident "(" ")"?
+//         | ident "(" primary* ")"?
 //         | "(" expr ")"
 node_t *primary() {
   // if next token is '(', next node would be `( <expr> )`
@@ -208,9 +208,17 @@ node_t *primary() {
   
   // if next token of identifier is '(', next node would be function
   if(consume("(")) {
-    expect(")");
     node_t *node = calloc(1, sizeof(node_t));
     node->kind = ND_FUNC;
+    if(!consume(")")) {
+      node_t *arg = node;
+      for(;;) {
+        arg->arg = primary();
+        arg = arg->arg;
+        if(consume(")"))  break;
+        else  expect(",");
+      }
+    }
     node->name = tok->str;
     strncpy(node->name, tok->str, tok->len);
     node->name[tok->len] = '\0';
@@ -240,3 +248,4 @@ node_t *primary() {
   // other, node would be number
   return new_node_num(expect_number());
 }
+

@@ -50,6 +50,7 @@ struct _node_t {
 
   // function statement
   char *name;
+  node_t *arg;
 
   int val; // use if kind is ND_NUM
   int offset; // use if kind is ND_LVAR

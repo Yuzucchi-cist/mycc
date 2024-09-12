@@ -76,6 +76,33 @@ void gen(node_t *node) {
 
   switch(node->kind) {
     case ND_FUNC:
+      int argNum = 0;
+      for(node_t *arg = node->arg; arg; arg = arg->arg, argNum++) {
+        gen(arg);
+        switch(argNum) {
+          case 0:
+            printf("\tpop rdi\n");
+            break;
+          case 1:
+            printf("\tpop rsi\n");
+            break;
+          case 2:
+            printf("\tpop rdx\n");
+            break;
+          case 3:
+            printf("\tpop rcx\n");
+            break;
+          case 4:
+            printf("\tpop r8\n");
+            break;
+          case 5:
+            printf("\tpop r9\n");
+            break;
+        }
+      }
+      // adjust rsp to multiple of 16
+      printf("\tsub rsp, %d\n", argNum%2);
+
       printf("\tcall %s\n", node->name);
       printf("\tpush rax\n");
       return;

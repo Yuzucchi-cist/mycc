@@ -27,7 +27,7 @@ bool consume_statement(TokenKind kind) {
 // if next token is identifier token, returns true and read next token
 // other, return false
 token_t *consume_ident() {
-  if (token->kind != TK_IDENT) return 0;
+  if (token->kind != TK_IDENT) return NULL;
   token_t *tok = token;
   token = token->next;
   return tok;
@@ -108,7 +108,7 @@ token_t *tokenize(char *p) {
     }
     
     // single-letter punctuator
-    if(strchr("+-*/(){}<>=;", *p)) {
+    if(strchr("+-*/(){}<>=,;", *p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
