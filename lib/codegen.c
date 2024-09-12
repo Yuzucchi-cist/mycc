@@ -75,15 +75,22 @@ void gen(node_t *node) {
   }
 
   switch(node->kind) {
+    case ND_FUNC:
+      printf("\tcall %s\n", node->name);
+      printf("\tpush rax\n");
+      return;
+
     case ND_NUM:
       printf("\tpush %d\n", node->val);
       return;
+
     case ND_LVAR:
       gen_lval(node);
       printf("\tpop rax\n");
       printf("\tmov rax, [rax]\n");
       printf("\tpush rax\n");
       return;
+
     case ND_ASSIGN:
       gen_lval(node->lhs);
       gen(node->rhs);

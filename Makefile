@@ -1,7 +1,9 @@
 TARGET:=mycc
 INCDIR:=lib
-SRCS:=$(wildcard *.c) $(filter-out $(wildcard $(INCDIR)/*_test.c), $(wildcard $(INCDIR)/*.c))
+LIBS:=$(filter-out $(wildcard $(INCDIR)/*_test.c), $(wildcard $(INCDIR)/*.c))
+SRCS:=$(wildcard *.c) $(LIBS)
 OBJS:=$(SRCS:%.c=%.o)
+HDRS:=$(LIBS:%.c=%.h)
 DEPS:=$(SRCS:%.c=%.d)
 TESTS:=$(wildcard *_test.c) $(wildcard $(INCDIR)/*_test.c)
 
@@ -9,8 +11,8 @@ CFLAGS:=-std=c11 -g -static -I $(INCDIR)
 
 all: $(TARGET)
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+$(TARGET): $(OBJS) $(HDRS)
+	$(CC) $(CFLAGS) -o $@ $(OBJS)
 
 .c.o:
 

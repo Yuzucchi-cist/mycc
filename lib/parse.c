@@ -363,7 +363,9 @@ node_t *unary() {
   return primary();
 }
 
-// primary = num | "(" expr ")"
+// primary = num
+//         | ident "(" ")"?
+//         | "(" expr ")"
 node_t *primary() {
   // if next token is '(', next node would be `( <expr> )`
   if(consume("(")) {
@@ -374,6 +376,18 @@ node_t *primary() {
 
   // if next token is identifier
   token_t *tok = consume_ident();
+  
+  // if next token of identifier is '(', next node would be function
+  if(consume("(")) {
+    expect(")");
+    node_t *node = calloc(1, sizeof(node_t));
+    node->kind = ND_FUNC;
+    node->name = tok->str;
+    strncpy(node->name, tok->str, tok->len);
+    node->name[tok->len] = '\0';
+    return node;
+  }
+
   if(tok) {
     node_t *node = calloc(1, sizeof(node_t));
     node->kind = ND_LVAR;

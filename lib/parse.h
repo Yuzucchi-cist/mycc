@@ -96,6 +96,7 @@ typedef enum {
   ND_WHILE, // while statement
   ND_FOR, // for statement
   ND_BLOCK, // {}
+  ND_FUNC, // function statement
   ND_LVAR, // local variable
   ND_NUM, // integer
 } NodeKind;
@@ -117,6 +118,9 @@ struct _node_t {
 
   // block statement
   node_t *stmt;
+
+  // function statement
+  char *name;
 
   int val; // use if kind is ND_NUM
   int offset; // use if kind is ND_LVAR

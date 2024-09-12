@@ -1,10 +1,33 @@
 #!/bin/bash
+assert_func() {
+  func="foo"
+  echo "
+#include <stdio.h>
+int foo() {
+  printf(\"Hello, world!\n\");
+  return 1;
+}
+
+int bar(int a, int b) {
+  printf(\"called bar: arg1:%d, arg2:%d\", a, b);
+  return a+b;
+}
+  " > $func.c
+  cc -c -o $func.o $func.c
+
+  assert "$1" "$2" "$func.o"
+  rm $func.c $func.o
+}
+  
 assert() {
   expected="$1"
   input="$2"
-  
   ./mycc "$input" > tmp.s
-  cc -o tmp tmp.s
+  if [ "$3" != "" ]; then
+    cc -o tmp tmp.s $3
+  else
+    cc -o tmp tmp.s
+  fi
   ./tmp
   actual="$?"
 
@@ -43,5 +66,6 @@ assert 10 "i=0;while(i < 10)  i=i+1;return i;"
 assert 10 "j=0; for(i=0; i<10; i=i+1) j=j+1; return j;"
 assert 10 "{10;}"
 assert 30 "j=0;k=0; for(i=0; i<10; i=i+1){ j=j+1;k=k+2;} return j+k;"
+assert_func 1 "foo();" "foo"
 
 echo OK
