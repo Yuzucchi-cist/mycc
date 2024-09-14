@@ -13,7 +13,7 @@ int bar(int a, int b) {
   return a+b;
 }
   " > $func.c
-  cc -c -o $func.o $func.c
+  cc -g -c -o $func.o $func.c
 
   assert "$1" "$2" "$func.o"
   rm $func.c $func.o
@@ -24,9 +24,9 @@ assert() {
   input="$2"
   ./mycc "$input" > tmp.s
   if [ "$3" != "" ]; then
-    cc -o tmp tmp.s $3
+    cc -g -o tmp tmp.s $3
   else
-    cc -o tmp tmp.s
+    cc -g -o tmp tmp.s
   fi
   ./tmp
   actual="$?"
@@ -88,5 +88,7 @@ int fib(int a) {
 assert 1 "int main() {int a;int b;a=1;b=&a;return *b;}"
 assert 127 "int main() { int a;a=2;return foo(1, a);} int foo(int b, int c) {return a+b+c;}"
 assert 127 "int main() { {int a;}a=2;return a;}"
+assert 1 "int main() {int a; a=1; int *b; b=&a; return *b;}"
+assert 1 "int main() {int *a;int b; a=&b;*a=1; return b;}"
 
 echo OK

@@ -1,8 +1,8 @@
 #include "parse.h"
 
 lvar_t *locals = NULL;
-int localLen = 0;
 func_t *funcs = NULL;
+int localOffset = 0;
 
 // find variable by name
 // return null if variable is not found
@@ -14,23 +14,28 @@ lvar_t *find_lvar(token_t *tok) {
 }
 
 // add local variarable
-node_t *add_lvar(token_t *tok) {
+node_t *add_lvar(type_t *ty, token_t *tok) {
   if(find_lvar(tok)) {
     char *str = tok->str;
     str[tok->len] = '\0';
     error_at(tok->str, "redeclaration of '%s'", str);
   }
-  lvar_t *lvar = calloc(1, sizeof(lvar));
+  lvar_t *lvar = calloc(1, sizeof(lvar_t));
+  lvar->type = ty;
   lvar->name = tok->str;
   lvar->len = tok->len;
   if(!locals) lvar->offset = 8;
   else lvar->offset = locals->offset + 8;
+  localOffset += lvar->offset;
   lvar->next = locals;
   locals = lvar;
-  localLen++;
 
   node_t *node = calloc(1, sizeof(node_t));
   node->kind = ND_LVAR;
+  node->name = calloc(1, sizeof(char) * tok->len);
+  node->type = ty;
+  strncpy(node->name, tok->str, tok->len);
+  node->name[tok->len] = '\0';
   node->offset = lvar->offset;
 
   return node;
@@ -56,8 +61,10 @@ node_t *new_node_lvar(token_t *tok) {
   node->kind = ND_LVAR;
 
   lvar_t *lvar = find_lvar(tok);
-  if(lvar)
+  if(lvar) {
+    node->type = lvar->type;
     node->offset = lvar->offset;
+  }
   else {
     char *str = tok->str;
     str[tok->len] = '\0';
@@ -76,25 +83,39 @@ node_t *program() {
   code[i] = NULL;
 }
 
+// type = int "*"*
+type_t *type() {
+  if(!consume("int"))  return NULL;
+  type_t *ty = calloc(1, sizeof(type_t));
+  ty->ty = INT;
+  while(consume("*")) {
+    type_t *ptr = calloc(1, sizeof(type_t));
+    ptr->ty = PTR;
+    ptr->ptr_to = ty;
+    ty = ptr;
+  }
+  return ty;
+}
+
 // func = int ident "(" ( (int ident ",")* int ident )? ")" "{" stmt "}"
 node_t *func() {
-  expect("int");
-
+  localOffset = 0;
   node_t *node = calloc(1, sizeof(node_t));
   node->kind = ND_FUNC;
+
+  node->type = type();
 
   token_t *funcTok = consume_ident();
   node->name = calloc(1, sizeof(char) * funcTok->len);
   strncpy(node->name, funcTok->str, funcTok->len);
   node->name[funcTok->len] = '\0';
-  localLen = 0;
 
   expect("(");
   if(!consume(")")) {
     node_t *arg = node;
     for(;;) {
-      expect("int");
-      arg->arg = add_lvar(consume_ident());
+      type_t *ty = type();
+      arg->arg = add_lvar(ty, consume_ident());
       arg = arg->arg;
       node->argLen++;
       if(consume(")"))  break;
@@ -105,6 +126,7 @@ node_t *func() {
 
   expect("{");
   node->stmt = new_block_stmt();
+  node->offset = localOffset;
   
   if(funcs==NULL) funcs = calloc(1, sizeof(func_t));
   else {
@@ -112,9 +134,8 @@ node_t *func() {
     f->next = funcs;
     funcs = f;
   }
+  funcs->type = node->type;
   funcs->name = node->name;
-
-  node->localLen = localLen;
 
   return node;
 }
@@ -147,8 +168,9 @@ node_t *new_block_stmt() {
 node_t *stmt() {
   node_t *node;
   
-  if(consume("int")) {
-    node = add_lvar(consume_ident());
+  type_t *ty = type();
+  if(ty) {
+    node = add_lvar(ty, consume_ident());
     expect(";");
   }
   else if(consume("{")) {

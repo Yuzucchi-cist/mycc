@@ -11,6 +11,7 @@ void gen_lval(node_t *node) {
 int beginLabelCnt = 0;
 int endLabelCnt = 0;
 int elseLabelCnt = 0;
+int lvarOffset = 0;
 
 void gen(node_t *node) {
   if(node->kind == ND_FUNC) {
@@ -19,7 +20,8 @@ void gen(node_t *node) {
     // allocate area of 26 variables
     printf("\tpush rbp\n");
     printf("\tmov rbp, rsp\n");
-    printf("\tsub rsp, %d\n", node->localLen * 8);
+    printf("\tsub rsp, %d\n", node->offset);
+    lvarOffset = node->offset;
     
     int argNum = 0;
     for(node_t *arg = node->arg; arg; arg = arg->arg, argNum++) {
@@ -152,11 +154,10 @@ void gen(node_t *node) {
         }
       }
       // adjust rsp to multiple of 16
-      int rspSup = (argNum%2) * 8;
-      printf("\tsub rsp, %d\n", rspSup);
+      printf("\tsub rsp, %d\n", lvarOffset%16);
 
       printf("\tcall %s\n", node->name);
-      printf("\tadd rsp, %d\n", rspSup);
+      printf("\tsub rsp, %d\n", lvarOffset%16);
       printf("\tpush rax\n");
       return;
 
@@ -172,7 +173,8 @@ void gen(node_t *node) {
       return;
 
     case ND_ASSIGN:
-      gen_lval(node->lhs);
+      if(node->lhs->kind == ND_DEREF) gen(node->lhs->lhs);
+      else  gen_lval(node->lhs);
       gen(node->rhs);
 
       printf("\tpop rdi\n");

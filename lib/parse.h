@@ -33,6 +33,14 @@ typedef enum {
   ND_NUM, // integer
 } NodeKind;
 
+// type
+typedef struct type_t type_t;
+
+struct type_t {
+  enum { INT, PTR } ty;
+  struct type_t *ptr_to;
+};
+
 typedef struct _node_t node_t;
 
 // abstruct syntax tree type
@@ -53,16 +61,19 @@ struct _node_t {
   node_t *arg;
   int argLen;
   node_t *stmt;
-  int localLen;
+
+  // LVAR
+  type_t *type;
 
   int val; // use if kind is ND_NUM
-  int offset; // use if kind is ND_LVAR
+  int offset; // use if kind is ND_LVAR or ND_FUNCTION
 };
 
 typedef struct lvar_t lvar_t;
 
 // local variable type
 struct lvar_t {
+  type_t *type; // type of variable
   char *name; // variable name
   int len; // length of variable name
   int offset; // offset from RBP
@@ -73,6 +84,7 @@ typedef struct func_t func_t;
 
 // function type
 struct func_t {
+  type_t *type;
   char *name;
   func_t *next;
 };
