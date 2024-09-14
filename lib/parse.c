@@ -32,8 +32,8 @@ node_t *add_lvar(type_t *ty, token_t *tok) {
 
   node_t *node = calloc(1, sizeof(node_t));
   node->kind = ND_LVAR;
-  node->name = calloc(1, sizeof(char) * tok->len);
   node->type = ty;
+  node->name = calloc(1, sizeof(char) * tok->len+1);
   strncpy(node->name, tok->str, tok->len);
   node->name[tok->len] = '\0';
   node->offset = lvar->offset;
@@ -349,7 +349,7 @@ node_t *primary() {
           else  expect(",");
         }
       }
-      node->name = calloc(1, sizeof(char) * tok->len);
+      node->name = calloc(1, sizeof(char) * tok->len+1);
       strncpy(node->name, tok->str, tok->len);
       node->name[tok->len] = '\0';
       return node;
