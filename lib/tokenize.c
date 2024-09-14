@@ -112,6 +112,12 @@ token_t *tokenize(char *p) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
+
+    if(start_with(p, "int")) {
+      cur = new_token(TK_RESERVED, cur, p, 3);
+      p+=3;
+      continue;
+    }
     
     // integer literal
     if(isdigit(*p)) {

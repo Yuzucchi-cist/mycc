@@ -103,8 +103,8 @@ bool statement_test(char *test_statement) {
 int main() {
   statement_test("func() {1+2;}");
   statement_test("func() {1+3*2*(3+4)+5;}");
-  statement_test("func() {a=0;}");
-  statement_test("func() {for(i=0;i<10;i=i+1) { k+1; }}");
-  statement_test("func(i, j) {funca(a, 1);}");
+  statement_test("func() {int a;a=0;}");
+  statement_test("func() {int i;int k;for(i=0;i<10;i=i+1) { k+1; }}");
+  statement_test("func(i, j) {int a;funca(a, 1);}");
   statement_test("main() { a=2;return foo(1, a);} foo(b, c) {return b+c;}");
 }

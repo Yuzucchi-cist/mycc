@@ -1,6 +1,7 @@
 #include "parse.h"
 
 lvar_t *locals = NULL;
+int localLen = 0;
 func_t *funcs = NULL;
 
 // find variable by name
@@ -10,6 +11,29 @@ lvar_t *find_lvar(token_t *tok) {
     if(var->len == tok->len && !memcmp(tok->str, var->name, var->len))
       return var;
   return NULL;
+}
+
+// add local variarable
+node_t *add_lvar(token_t *tok) {
+  if(find_lvar(tok)) {
+    char *str = tok->str;
+    str[tok->len] = '\0';
+    error_at(tok->str, "redeclaration of '%s'", str);
+  }
+  lvar_t *lvar = calloc(1, sizeof(lvar));
+  lvar->name = tok->str;
+  lvar->len = tok->len;
+  if(!locals) lvar->offset = 8;
+  else lvar->offset = locals->offset + 8;
+  lvar->next = locals;
+  locals = lvar;
+  localLen++;
+
+  node_t *node = calloc(1, sizeof(node_t));
+  node->kind = ND_LVAR;
+  node->offset = lvar->offset;
+
+  return node;
 }
 
 node_t *new_node(NodeKind kind, node_t *lhs, node_t *rhs) {
@@ -35,14 +59,9 @@ node_t *new_node_lvar(token_t *tok) {
   if(lvar)
     node->offset = lvar->offset;
   else {
-    lvar = calloc(1, sizeof(lvar));
-    lvar->name = tok->str;
-    lvar->len = tok->len;
-    if(!locals) lvar->offset = 8;
-    else lvar->offset = locals->offset + 8;
-    node->offset = lvar->offset;
-    lvar->next = locals;
-    locals = lvar;
+    char *str = tok->str;
+    str[tok->len] = '\0';
+    error_at(tok->str, "%s is undefined local value", str);
   }
   return node;
 }
@@ -57,8 +76,10 @@ node_t *program() {
   code[i] = NULL;
 }
 
-// func = ident "(" ( (ident ",")* ident )? ")" "{" stmt "}"
+// func = int ident "(" ( (int ident ",")* int ident )? ")" "{" stmt "}"
 node_t *func() {
+  expect("int");
+
   node_t *node = calloc(1, sizeof(node_t));
   node->kind = ND_FUNC;
 
@@ -66,12 +87,14 @@ node_t *func() {
   node->name = calloc(1, sizeof(char) * funcTok->len);
   strncpy(node->name, funcTok->str, funcTok->len);
   node->name[funcTok->len] = '\0';
+  localLen = 0;
 
   expect("(");
   if(!consume(")")) {
     node_t *arg = node;
     for(;;) {
-      arg->arg = new_node_lvar(consume_ident());
+      expect("int");
+      arg->arg = add_lvar(consume_ident());
       arg = arg->arg;
       node->argLen++;
       if(consume(")"))  break;
@@ -91,6 +114,8 @@ node_t *func() {
   }
   funcs->name = node->name;
 
+  node->localLen = localLen;
+
   return node;
 }
 
@@ -99,16 +124,21 @@ node_t *new_block_stmt() {
   node->kind = ND_BLOCK;
   
   node_t *bstmt = node;
+  lvar_t *oldLocals = locals;
 
   while(!consume("}")) {
     bstmt->stmt = stmt();
     bstmt = bstmt->stmt;
   }
   bstmt->stmt = NULL;
+
+  locals = oldLocals;
+
   return node;
 }
 
 // stmt = expr ";"
+//      | "int" ident ";"
 //      | "{" stmt* "}"
 //      | "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
@@ -116,8 +146,12 @@ node_t *new_block_stmt() {
 //      | "for" "(" expr ";" expr ";" expr ")" stmt
 node_t *stmt() {
   node_t *node;
-
-  if(consume("{")) {
+  
+  if(consume("int")) {
+    node = add_lvar(consume_ident());
+    expect(";");
+  }
+  else if(consume("{")) {
     node = new_block_stmt();
   } else if(consume_statement(TK_RETURN)) {
     node = calloc(1, sizeof(node_t));

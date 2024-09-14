@@ -29,12 +29,8 @@ int main(int argc, char **argv) {
   }
   printf("\n");
 
-  for(localNum=0; locals; locals=locals->next)  localNum++;
-
-  
   for (int i=0; code[i]; i++) {
     gen(code[i]);
-
   }
 
   return 0;

@@ -12,8 +12,6 @@ int beginLabelCnt = 0;
 int endLabelCnt = 0;
 int elseLabelCnt = 0;
 
-int localNum = 0;
-
 void gen(node_t *node) {
   if(node->kind == ND_FUNC) {
     printf("%s:\n", node->name);
@@ -21,8 +19,8 @@ void gen(node_t *node) {
     // allocate area of 26 variables
     printf("\tpush rbp\n");
     printf("\tmov rbp, rsp\n");
-    printf("\tsub rsp, %d\n", localNum * 8);
-
+    printf("\tsub rsp, %d\n", node->localLen * 8);
+    
     int argNum = 0;
     for(node_t *arg = node->arg; arg; arg = arg->arg, argNum++) {
       gen_lval(arg);

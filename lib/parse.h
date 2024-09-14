@@ -53,6 +53,7 @@ struct _node_t {
   node_t *arg;
   int argLen;
   node_t *stmt;
+  int localLen;
 
   int val; // use if kind is ND_NUM
   int offset; // use if kind is ND_LVAR
@@ -78,6 +79,7 @@ struct func_t {
 
 extern node_t *code[100];
 extern lvar_t *locals;
+extern int localLen;
 extern func_t *funcs;
 
 lvar_t *find_lvar(token_t *tok);
