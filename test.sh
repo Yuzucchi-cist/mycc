@@ -72,4 +72,16 @@ assert_func 2 "main() {a=0;b=2; bar(a, b);}"
 assert 10 "main() { foo();} foo() {return 10;}"
 assert 3 "main() { a=2;return foo(1, a);} foo(b, c) {return b+c;}"
 
+assert 21 "
+main() {
+  return fib(7);
+}
+fib(a) {
+  if(a==0) return 1;
+  if(a==1) return 1;
+  b=a-1;
+  c=a-2;
+  return fib(b) + fib(c);
+}
+"
 echo OK

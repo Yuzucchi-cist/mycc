@@ -57,7 +57,7 @@ node_t *program() {
   code[i] = NULL;
 }
 
-// func = ident "(" (ident ",")* ")" "{" stmt "}"
+// func = ident "(" ( (ident ",")* ident )? ")" "{" stmt "}"
 node_t *func() {
   node_t *node = calloc(1, sizeof(node_t));
   node->kind = ND_FUNC;
@@ -252,7 +252,7 @@ node_t *unary() {
 }
 
 // primary = num
-//         | ident "(" primary* ")"?
+//         | ident "(" expr* ")"?
 //         | "(" expr ")"
 node_t *primary() {
   // if next token is '(', next node would be `( <expr> )`
@@ -272,7 +272,7 @@ node_t *primary() {
       if(!consume(")")) {
         node_t *arg = node;
         for(;;) {
-          arg->arg = primary();
+          arg->arg = expr();
           arg = arg->arg;
           if(consume(")"))  break;
           else  expect(",");

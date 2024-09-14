@@ -99,6 +99,7 @@ void gen(node_t *node) {
         gen(node->then);
       }
       printf(".Lend%d:\n", endLabelCnt++);
+      printf("\tpush rax\n");
       return;
 
     case ND_WHILE:
@@ -110,6 +111,7 @@ void gen(node_t *node) {
       gen(node->then);
       printf("\tjmp .Lbegin%d\n", beginLabelCnt++);
       printf(".Lend%d:\n", endLabelCnt++);
+      printf("\tpush rax\n");
       return;
 
     case ND_FOR:
@@ -123,6 +125,7 @@ void gen(node_t *node) {
       gen(node->adv);
       printf("\tjmp .Lbegin%d\n", beginLabelCnt++);
       printf(".Lend%d:\n", endLabelCnt++);
+      printf("\tpush rax\n");
       return;
   }
 
@@ -153,9 +156,11 @@ void gen(node_t *node) {
         }
       }
       // adjust rsp to multiple of 16
-      printf("\tsub rsp, %d\n", argNum%2);
+      int rspSup = (argNum%2) * 8;
+      printf("\tsub rsp, %d\n", rspSup);
 
       printf("\tcall %s\n", node->name);
+      printf("\tadd rsp, %d\n", rspSup);
       printf("\tpush rax\n");
       return;
 
