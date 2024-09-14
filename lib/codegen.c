@@ -127,9 +127,7 @@ void gen(node_t *node) {
       printf(".Lend%d:\n", endLabelCnt++);
       printf("\tpush rax\n");
       return;
-  }
 
-  switch(node->kind) {
     case ND_CALL:
       int argNum = 0;
       for(node_t *arg = node->arg; arg; arg = arg->arg, argNum++) {
@@ -183,6 +181,19 @@ void gen(node_t *node) {
       printf("\tpop rax\n");
       printf("\tmov [rax], rdi\n");
       printf("\tpush rdi\n");
+      return;
+
+    case ND_ADDR:
+      gen_lval(node->lhs);
+      printf("\n\n\n");
+      return;
+
+    case ND_DEREF:
+      gen(node->lhs);
+      printf("\tpop rax\n");
+      printf("\tmov rax, [rax]\n");
+      printf("\tpush rax\n");
+      printf("\n\n");
       return;
   }
 

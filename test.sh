@@ -84,4 +84,5 @@ fib(a) {
   return fib(b) + fib(c);
 }
 "
+assert 1 "main() {a=1;b=&a;return *b;}"
 echo OK

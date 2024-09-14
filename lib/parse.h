@@ -14,6 +14,8 @@ typedef enum {
   ND_SUB, // -
   ND_MUL, // *
   ND_DIV, // /
+  ND_ADDR, // * pointer
+  ND_DEREF, // & 
   ND_EQ, // ==
   ND_NE, // !=
   ND_LT, // <
