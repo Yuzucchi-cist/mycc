@@ -104,6 +104,8 @@ node_t *new_node_num(int val);
 
 node_t *new_node_lvar(token_t *tok);
 
+int size_of(type_t *ty);
+
 node_t *program();
 
 node_t *func();

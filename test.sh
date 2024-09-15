@@ -99,5 +99,10 @@ assert 1 "int main() {int *a;int b; a=&b;*a=1; return b;}"
 assert 21 "int main() {return foo(1,2,3,4,5,6);} int foo(int a, int b, int c, int d, int e, int f) {return a+b+c+d+e+f;}"
 assert_func 3 "int main() {int *p;alloc(&p, 1, 2, 3, 4);int *q;q=p+2;return *q;}"
 assert_func 4 "int main() {int *p;alloc(&p, 1, 2, 3, 4);int *q;q=p-2+5;return *q;}"
+assert 4 "int main() {int a;return sizeof(a);}"
+assert 4 "int main() {return sizeof(1);}"
+assert 8 "int main() {int *a;return sizeof(a);}"
+assert 8 "int main() {int *a;return sizeof(a+2);}"
+assert 4 "int main() {int *a;return sizeof(sizeof(a));}"
 
 echo OK

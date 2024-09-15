@@ -84,6 +84,15 @@ node_t *new_node_lvar(token_t *tok) {
   return node;
 }
 
+int size_of(type_t *ty) {
+  switch(ty->ty) {
+    case INT:
+      return 4;
+    case PTR:
+      return 8;
+  }
+}
+
 node_t *code[100];
 
 node_t *program() {
@@ -309,12 +318,16 @@ node_t *mul() {
   }
 }
 
-// unary = "+" primary
+// unary = "sizeof" unary
+//       | "+" primary
 //       | "-" primary
 //       | "*" unary
 //       | "&" unary
 node_t *unary() {
-  if(consume("+"))
+  if(consume_statement(TK_SIZEOF)) {
+    return new_node_num(size_of(unary()->type));
+  }
+  else if(consume("+"))
     return primary();
   else if(consume("-"))
     return new_binary(ND_SUB, new_node_num(0), primary());

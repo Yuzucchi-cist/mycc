@@ -127,6 +127,13 @@ token_t *tokenize(char *p) {
       cur->len = p - q;
       continue;
     }
+
+    // sizeof statement
+    if(is_statement(p, "sizeof")) {
+      cur = new_token(TK_SIZEOF, cur, p, 6);
+      p += 6;
+      continue;
+    }
     
     // return statement
     if(is_statement(p, "return")) {
