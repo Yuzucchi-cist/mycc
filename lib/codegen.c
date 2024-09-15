@@ -1,17 +1,42 @@
 #include "codegen.h"
 
-void gen_lval(node_t *node) {
-  if (node->kind != ND_LVAR)
-    error("lhs of assignment is not variable, but got %d", node->kind);
+char *argregw[6] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
+char *argregd[6] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+
+void gen_addr(node_t *node) {
   printf("\tmov rax, rbp\n");
   printf("\tsub rax, %d\n", node->offset);
   printf("\tpush rax\n");
+}
+
+void gen_lval(node_t *node) {
+  if (node->kind != ND_LVAR)
+    error("lhs of assignment is not variable, but got %d", node->kind);
+  gen_addr(node);
 }
 
 int beginLabelCnt = 0;
 int endLabelCnt = 0;
 int elseLabelCnt = 0;
 int lvarOffset = 0;
+
+void load(type_t *ty) {
+  printf("\tpop rax\n");
+
+  if(ty->ty == INT)
+    printf("\tmovsx rax, dword ptr [rax]\n");
+  else
+    printf("\tmov rax, [rax]\n");
+
+  printf("\tpush rax\n");
+}
+
+void load_arg(node_t *node, int idx) {
+  if(node->type->ty == INT)
+    printf("\tmov [rbp-%d], %s\n", node->offset, argregw[idx]);
+  else
+    printf("\tmov [rbp-%d], %s\n", node->offset, argregd[idx]);
+}
 
 void gen(node_t *node) {
   if(node->kind == ND_FUNC) {
@@ -23,36 +48,9 @@ void gen(node_t *node) {
     printf("\tsub rsp, %d\n", node->offset);
     lvarOffset = node->offset;
     
-    int argNum = 0;
-    for(node_t *arg = node->arg; arg; arg = arg->arg, argNum++) {
-      gen_lval(arg);
-      printf("\tpop rax\n\n");
-      switch(argNum) {
-        case 0:
-          //printf("\tpush rdi\n");
-          printf("\tmov [rax], rdi\n");
-          break;
-        case 1:
-          // printf("\tpush rsi\n");
-          printf("\tmov [rax], rsi\n");
-          break;
-        case 2:
-          // printf("\tpush rdx\n");
-          printf("\tmov [rax], rdx\n");
-          break;
-        case 3:
-          // printf("\tpush rcx\n");
-          printf("\tmov [rax], rcx\n");
-          break;
-        case 4:
-          // printf("\tpush r8\n");
-          printf("\tmov [rax], r8\n");
-          break;
-        case 5:
-          // printf("\tpush r9\n");
-          printf("\tmov [rax], r9\n");
-          break;
-      }
+    int argnum = 0;
+    for(node_t *arg = node->arg; arg; arg = arg->arg) {
+      load_arg(arg, argnum++);
     }
 
     gen(node->stmt);
@@ -129,35 +127,18 @@ void gen(node_t *node) {
       return;
 
     case ND_CALL:
-      int argNum = 0;
-      for(node_t *arg = node->arg; arg; arg = arg->arg, argNum++) {
+      int argnum = 0;
+      for(node_t *arg = node->arg; arg; arg = arg->arg) {
         gen(arg);
-        switch(argNum) {
-          case 0:
-            printf("\tpop rdi\n");
-            break;
-          case 1:
-            printf("\tpop rsi\n");
-            break;
-          case 2:
-            printf("\tpop rdx\n");
-            break;
-          case 3:
-            printf("\tpop rcx\n");
-            break;
-          case 4:
-            printf("\tpop r8\n");
-            break;
-          case 5:
-            printf("\tpop r9\n");
-            break;
-        }
+        printf("\tpop %s\n", argregd[argnum++]);
       }
+
       // adjust rsp to multiple of 16
-      printf("\tsub rsp, %d\n", lvarOffset%16);
+      int offset = 16-lvarOffset%16;
+      printf("\tsub rsp, %d\n", offset);
 
       printf("\tcall %s\n", node->name);
-      printf("\tsub rsp, %d\n", lvarOffset%16);
+      printf("\tadd rsp, %d\n", offset);
       printf("\tpush rax\n");
       return;
 
@@ -167,33 +148,35 @@ void gen(node_t *node) {
 
     case ND_LVAR:
       gen_lval(node);
-      printf("\tpop rax\n");
-      printf("\tmov rax, [rax]\n");
-      printf("\tpush rax\n");
+      load(node->type);
       return;
 
     case ND_ASSIGN:
-      if(node->lhs->kind == ND_DEREF) gen(node->lhs->lhs);
+      if(node->lhs->kind == ND_DEREF) {
+        gen_addr(node->lhs);
+        load(node->lhs->type);
+      }
       else  gen_lval(node->lhs);
       gen(node->rhs);
-
+      
       printf("\tpop rdi\n");
       printf("\tpop rax\n");
-      printf("\tmov [rax], rdi\n");
+      if(node->lhs->type->ty == INT)
+        printf("\tmov dword ptr [rax], edi\n");
+      else
+        printf("\tmov [rax], rdi\n");
       printf("\tpush rdi\n");
       return;
 
     case ND_ADDR:
-      gen_lval(node->lhs);
+      gen_addr(node);
       printf("\n\n\n");
       return;
 
     case ND_DEREF:
-      gen(node->lhs);
-      printf("\tpop rax\n");
-      printf("\tmov rax, [rax]\n");
-      printf("\tpush rax\n");
-      printf("\n\n");
+      gen_addr(node);
+      load(node->type);
+      load(node->type->ptr_to);
       return;
   }
 

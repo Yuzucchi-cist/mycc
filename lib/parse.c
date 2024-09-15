@@ -24,8 +24,11 @@ node_t *add_lvar(type_t *ty, token_t *tok) {
   lvar->type = ty;
   lvar->name = tok->str;
   lvar->len = tok->len;
-  if(!locals) lvar->offset = 8;
-  else lvar->offset = locals->offset + 8;
+  int offset = 0;
+  if(ty->ty == PTR) offset = 8;
+  else  offset = 4;
+  if(!locals) lvar->offset = offset;
+  else lvar->offset = locals->offset + offset;
   localOffset += lvar->offset;
   lvar->next = locals;
   locals = lvar;
@@ -308,15 +311,13 @@ node_t *unary() {
   else if(consume("-"))
     return new_node(ND_SUB, new_node_num(0), primary());
   else if(consume("*")) {
-    node_t *node = calloc(1, sizeof(node_t));
+    node_t *node = unary();
     node->kind = ND_DEREF;
-    node->lhs = unary();
     return node;
   }
   else if(consume("&")) {
-    node_t *node = calloc(1, sizeof(node_t));
+    node_t *node = unary();
     node->kind = ND_ADDR;
-    node->lhs = unary();
     return node;
   }
   return primary();

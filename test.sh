@@ -85,10 +85,11 @@ int fib(int a) {
   return fib(b) + fib(c);
 }
 "
-assert 1 "int main() {int a;int b;a=1;b=&a;return *b;}"
+assert 1 "int main() {int a;int *b;a=1;b=&a;return *b;}"
 assert 127 "int main() { int a;a=2;return foo(1, a);} int foo(int b, int c) {return a+b+c;}"
 assert 127 "int main() { {int a;}a=2;return a;}"
 assert 1 "int main() {int a; a=1; int *b; b=&a; return *b;}"
 assert 1 "int main() {int *a;int b; a=&b;*a=1; return b;}"
+assert 21 "int main() {return foo(1,2,3,4,5,6);} int foo(int a, int b, int c, int d, int e, int f) {return a+b+c+d+e+f;}"
 
 echo OK
