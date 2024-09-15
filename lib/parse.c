@@ -44,17 +44,25 @@ node_t *add_lvar(type_t *ty, token_t *tok) {
   return node;
 }
 
-node_t *new_node(NodeKind kind, node_t *lhs, node_t *rhs) {
+node_t *new_node(NodeKind kind) {
   node_t *node = calloc(1, sizeof(node_t));
   node->kind = kind;
+  return node;
+}
+
+node_t *new_binary(NodeKind kind, node_t *lhs, node_t *rhs) {
+  node_t *node = new_node(kind);
   node->lhs = lhs;
   node->rhs = rhs;
+  node->type = node->lhs->type;
   return node;
 }
 
 node_t *new_node_num(int val) {
   node_t *node = calloc(1, sizeof(node_t));
   node->kind = ND_NUM;
+  node->type = calloc(1, sizeof(type_t));
+  node->type->ty = INT;
   node->val = val;
   return node;
 }
@@ -236,7 +244,7 @@ node_t *assign() {
   node_t *node = equality();
 
   if(consume("="))
-    return new_node(ND_ASSIGN, node, assign());
+    return new_binary(ND_ASSIGN, node, assign());
   return node;
 }
 
@@ -246,9 +254,9 @@ node_t *equality() {
   NodeKind kind;
 
   if(consume("=="))
-    return new_node(ND_EQ, node, relational());
+    return new_binary(ND_EQ, node, relational());
   else if(consume("!="))
-    return new_node(ND_NE, node, relational());
+    return new_binary(ND_NE, node, relational());
   else
     return node;
 }
@@ -258,13 +266,13 @@ node_t *relational() {
   node_t *node = add();
 
   if(consume("<="))
-    return new_node(ND_LE, node, add());
+    return new_binary(ND_LE, node, add());
   else if(consume("<"))
-    return new_node(ND_LT, node, add());
+    return new_binary(ND_LT, node, add());
   else if(consume(">="))
-    return new_node(ND_LE, add(), node);
+    return new_binary(ND_LE, add(), node);
   else if(consume(">"))
-    return new_node(ND_LT, add(), node);
+    return new_binary(ND_LT, add(), node);
   else
     return node;
 }
@@ -275,10 +283,10 @@ node_t *add() {
 
   for(;;) {
     if(consume("+")) {
-      node = new_node(ND_ADD, node, mul());
+      node = new_binary(ND_ADD, node, mul());
     }
     else if(consume("-")) {
-      node = new_node(ND_SUB, node, mul());
+      node = new_binary(ND_SUB, node, mul());
     }
     else
       return node;
@@ -291,10 +299,10 @@ node_t *mul() {
   
   for(;;) {
     if(consume("*")) {
-      node = new_node(ND_MUL, node, unary());
+      node = new_binary(ND_MUL, node, unary());
     }
     else if(consume("/")) {
-      node = new_node(ND_DIV, node, unary());
+      node = new_binary(ND_DIV, node, unary());
     }
     else
       return node;
@@ -309,7 +317,7 @@ node_t *unary() {
   if(consume("+"))
     return primary();
   else if(consume("-"))
-    return new_node(ND_SUB, new_node_num(0), primary());
+    return new_binary(ND_SUB, new_node_num(0), primary());
   else if(consume("*")) {
     node_t *node = unary();
     node->kind = ND_DEREF;
@@ -353,6 +361,8 @@ node_t *primary() {
       node->name = calloc(1, sizeof(char) * tok->len+1);
       strncpy(node->name, tok->str, tok->len);
       node->name[tok->len] = '\0';
+      node->type = calloc(1, sizeof(type_t));
+      node->type->ty = INT;
       return node;
     }
 

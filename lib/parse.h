@@ -96,7 +96,9 @@ extern func_t *funcs;
 
 lvar_t *find_lvar(token_t *tok);
 
-node_t *new_node(NodeKind kind, node_t *lhs, node_t *rhs);
+node_t *new_node(NodeKind kind);
+
+node_t *new_binary(NodeKind kind, node_t *lhs, node_t *rhs);
 
 node_t *new_node_num(int val);
 

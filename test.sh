@@ -3,6 +3,7 @@ assert_func() {
   func="foo"
   echo "
 #include <stdio.h>
+#include <stdlib.h>
 int foo() {
   printf(\"Hello, world!\n\");
   return 1;
@@ -11,6 +12,11 @@ int foo() {
 int bar(int a, int b) {
   printf(\"called bar: arg1:%d, arg2:%d\n\", a, b);
   return a+b;
+}
+
+void alloc(int **p, int a, int b, int c, int d) {
+  *p = calloc(1, sizeof(int));
+  **p = a; *(*p+1) = b;*(*p+2) = c;*(*p+3) = d;
 }
   " > $func.c
   cc -g -c -o $func.o $func.c
@@ -91,5 +97,7 @@ assert 127 "int main() { {int a;}a=2;return a;}"
 assert 1 "int main() {int a; a=1; int *b; b=&a; return *b;}"
 assert 1 "int main() {int *a;int b; a=&b;*a=1; return b;}"
 assert 21 "int main() {return foo(1,2,3,4,5,6);} int foo(int a, int b, int c, int d, int e, int f) {return a+b+c+d+e+f;}"
+assert_func 3 "int main() {int *p;alloc(&p, 1, 2, 3, 4);int *q;q=p+2;return *q;}"
+assert_func 4 "int main() {int *p;alloc(&p, 1, 2, 3, 4);int *q;q=p-2+5;return *q;}"
 
 echo OK

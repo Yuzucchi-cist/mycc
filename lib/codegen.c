@@ -188,9 +188,21 @@ void gen(node_t *node) {
 
   switch(node->kind) {
     case ND_ADD:
+      if(node->type->ptr_to) {
+        if(node->type->ptr_to->ty == INT)
+          printf("\timul rdi, %d\n", 4);
+        if(node->type->ptr_to->ty == PTR)
+          printf("\timul rdi, %d\n", 8);
+      }
       printf("\tadd rax, rdi\n");
       break;
     case ND_SUB:
+      if(node->type->ptr_to) {
+        if(node->type->ptr_to->ty == INT)
+          printf("\timul rdi, %d\n", 4);
+        if(node->type->ptr_to->ty == PTR)
+          printf("\timul rdi, %d\n", 8);
+      }
       printf("\tsub rax, rdi\n");
       break;
     case ND_MUL:
