@@ -12,12 +12,6 @@
 typedef enum {
   TK_RESERVED, // symbol
   TK_IDENT, // identifier
-  TK_RETURN, // return
-  TK_IF, // if
-  TK_ELSE, // else
-  TK_WHILE, // while
-  TK_FOR, // for
-  TK_SIZEOF,
   TK_NUM, // integer
   TK_EOF, // token presented input end
 } TokenKind;

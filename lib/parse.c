@@ -266,12 +266,12 @@ node_t *stmt() {
   }
   else if(consume("{")) {
     node = new_block_stmt();
-  } else if(consume_statement(TK_RETURN)) {
+  } else if(consume("return")) {
     node = calloc(1, sizeof(node_t));
     node->kind = ND_RETURN;
     node->lhs = expr();
     expect(";");
-  } else if(consume_statement(TK_IF)) {
+  } else if(consume("if")) {
     node = calloc(1, sizeof(node_t));
     node->kind = ND_IF;
 
@@ -281,10 +281,10 @@ node_t *stmt() {
 
     node->then = stmt();
 
-    if(consume_statement(TK_ELSE))
+    if(consume("else"))
       node->els = stmt();
     else  node->els = NULL;
-  } else if(consume_statement(TK_WHILE)) {
+  } else if(consume("while")) {
     node = calloc(1, sizeof(node_t));
     node->kind = ND_WHILE;
 
@@ -293,7 +293,7 @@ node_t *stmt() {
     consume(")");
     
     node->then = stmt();
-  } else if(consume_statement(TK_FOR)) {
+  } else if(consume("for")) {
     node = calloc(1, sizeof(node_t));
     node->kind = ND_FOR;
     
@@ -395,7 +395,7 @@ node_t *mul() {
 //       | "*" unary
 //       | "&" unary
 node_t *unary() {
-  if(consume_statement(TK_SIZEOF)) {
+  if(consume("sizeof")) {
     return new_node_num(size_of(unary()->type));
   }
   else if(consume("+"))

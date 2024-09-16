@@ -89,10 +89,27 @@ token_t *new_token(TokenKind kind, token_t *cur, char *str, int len) {
   return tok;
 }
 
-bool is_statement(char *p, char *statement) {
-  int len = strlen(statement);
-  return !strncmp(p, statement, len) && !is_alnum(p[len]);
+char *start_with_reserved(char *p) {
+  // keywords
+  static char *kw[] = {"return", "if", "else", "while", "for", "sizeof", "int"};
+
+  for(int i=0; i < sizeof(kw) / sizeof(*kw); i++) {
+    int len = strlen(kw[i]);
+    if(start_with(p, kw[i]) && !is_alnum(p[len]))
+      return kw[i];
+  }
+
+  // multi-letter punctuator
+  static char *ops[] = {"==", "!=", "<=", ">="};
+  for(int i=0; i < sizeof(ops) / sizeof(*ops); i++) {
+    int len = strlen(ops[i]);
+    if(start_with(p, ops[i]))
+      return ops[i];
+  }
+
+  return NULL;
 }
+
 
 // tokenize input string p and return it
 token_t *tokenize(char *p) {
@@ -107,25 +124,18 @@ token_t *tokenize(char *p) {
       continue;
     }
     
-    // multi-letter punctuator
-    if(start_with(p, "==") ||
-      start_with(p, "!=") ||
-      start_with(p, "<=") ||
-      start_with(p, ">=")) {
-      cur = new_token(TK_RESERVED, cur, p, 2);
-      p+=2;
+    // keyword or multi-letter punctuator
+    char *kw = start_with_reserved(p);
+    if(kw) {
+      int len = strlen(kw);
+      cur = new_token(TK_RESERVED, cur, p, len);
+      p+=len;
       continue;
     }
     
     // single-letter punctuator
     if(strchr("+-*/(){}[]<>=,&;", *p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
-      continue;
-    }
-
-    if(start_with(p, "int")) {
-      cur = new_token(TK_RESERVED, cur, p, 3);
-      p+=3;
       continue;
     }
     
@@ -138,44 +148,6 @@ token_t *tokenize(char *p) {
       continue;
     }
 
-    // sizeof statement
-    if(is_statement(p, "sizeof")) {
-      cur = new_token(TK_SIZEOF, cur, p, 6);
-      p += 6;
-      continue;
-    }
-    
-    // return statement
-    if(is_statement(p, "return")) {
-      cur = new_token(TK_RETURN, cur, p, 6);
-      p += 6;
-      continue;
-    }
-
-    // control statement
-    if(is_statement(p, "if")) {
-      cur = new_token(TK_IF, cur, p, 2);
-      p += 2;
-      continue;
-    }
-
-    if(is_statement(p, "else")) {
-      cur = new_token(TK_ELSE, cur, p, 4);
-      p += 4;
-      continue;
-    }
-
-    if(is_statement(p, "while")) {
-      cur = new_token(TK_WHILE, cur, p, 5);
-      p += 5;
-      continue;
-    }
-
-    if(is_statement(p, "for")) {
-      cur = new_token(TK_FOR, cur, p, 3);
-      p += 3;
-      continue;
-    }
 
     // alphabet literal
     if('a' <= *p && *p <= 'z') {
