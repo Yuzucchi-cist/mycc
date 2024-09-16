@@ -181,7 +181,8 @@ node_t *new_block_stmt() {
 
   while(!consume("}")) {
     bstmt->stmt = stmt();
-    bstmt = bstmt->stmt;
+    if(bstmt->stmt)
+      bstmt = bstmt->stmt;
   }
   bstmt->stmt = NULL;
 
@@ -203,6 +204,7 @@ node_t *stmt() {
   type_t *ty = type();
   if(ty) {
     node = add_lvar(ty, consume_ident());
+    node = NULL;
     expect(";");
   }
   else if(consume("{")) {
