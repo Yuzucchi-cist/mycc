@@ -40,7 +40,7 @@ typedef enum {
 
 // type
 struct type_t {
-  enum { INT, PTR, ARRAY } ty;
+  enum { CHAR, INT, PTR, ARRAY } ty;
   struct type_t *ptr_to;
   int array_size;
 };

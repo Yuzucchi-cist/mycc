@@ -91,7 +91,7 @@ token_t *new_token(TokenKind kind, token_t *cur, char *str, int len) {
 
 char *start_with_reserved(char *p) {
   // keywords
-  static char *kw[] = {"return", "if", "else", "while", "for", "sizeof", "int"};
+  static char *kw[] = {"return", "if", "else", "while", "for", "sizeof", "int", "char"};
 
   for(int i=0; i < sizeof(kw) / sizeof(*kw); i++) {
     int len = strlen(kw[i]);

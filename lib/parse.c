@@ -77,7 +77,7 @@ var_t *declare() {
 }
 
 bool is_type() {
-  return peek("int");
+  return peek("int") || peek("char");
 }
 
 node_t *new_node(NodeKind kind) {
@@ -112,6 +112,8 @@ node_t *new_node_num(int val) {
 
 int size_of(type_t *ty) {
   switch(ty->ty) {
+    case CHAR:
+      return 1;
     case INT:
       return 4;
     case PTR:
@@ -151,9 +153,14 @@ node_t *program() {
 
 // type = int "*"*
 type_t *type_specifier() {
-  if(!consume("int"))  return NULL;
+  if(!is_type()) return NULL;
   type_t *ty = calloc(1, sizeof(type_t));
-  ty->ty = INT;
+
+  if(consume("int")) {
+    ty->ty = INT;
+  } else if(consume("char")) {
+    ty->ty = CHAR;
+  }
   while(consume("*")) {
     type_t *ptr = calloc(1, sizeof(type_t));
     ptr->ty = PTR;

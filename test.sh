@@ -109,5 +109,6 @@ assert 0 "int main() {int a[5];return 0;}"
 assert 2 "int main() {int a[5];*a=1;*(a+1)=2;return *(a+1);}"
 assert 1 "int main() {int a[5]; a[2] = 1;return a[2];}"
 assert 1 "int a; int main() {a=1;return a;}"
+assert 3 "int main() {char x[3];x[0] = -1;x[1] = 2;int y;y = 4;return x[0] + y;}"
 
 echo OK
