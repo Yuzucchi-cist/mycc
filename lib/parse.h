@@ -129,6 +129,8 @@ node_t *mul();
 
 node_t *unary();
 
+node_t *postfix();
+
 node_t *primary();
 
 #endif

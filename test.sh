@@ -107,5 +107,6 @@ assert 4 "int main() {int *a;return sizeof(sizeof(a));}"
 assert_func 8 "int main() {int *p;alloc(&p, 1, 2, 3, 4);*(p+1)=8;return *(p+1);}"
 assert 0 "int main() {int a[5];return 0;}"
 assert 2 "int main() {int a[5];*a=1;*(a+1)=2;return *(a+1);}"
+assert 1 "int main() {int a[5]; a[2] = 1;return a[2];}"
 
 echo OK

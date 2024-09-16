@@ -340,9 +340,9 @@ node_t *unary() {
     return new_node_num(size_of(unary()->type));
   }
   else if(consume("+"))
-    return primary();
+    return postfix();
   else if(consume("-"))
-    return new_binary(ND_SUB, new_node_num(0), primary());
+    return new_binary(ND_SUB, new_node_num(0), postfix());
   else if(consume("*")) {
     node_t *node = new_node(ND_DEREF);
     node->lhs =  unary();
@@ -355,7 +355,27 @@ node_t *unary() {
     node->type = node->lhs->type;
     return node;
   }
-  return primary();
+  return postfix();
+}
+
+
+// postfix = primary ( "[" expr "]" )*
+node_t *postfix() {
+  node_t *node = primary();
+
+  for(;;) {
+    if(consume("[")) {
+      node_t *exp = new_binary(ND_ADD, node, expr());
+      expect("]");
+
+      node = new_node(ND_DEREF);
+      node->lhs =  exp;
+      node->type = node->lhs->type;
+      continue;
+    } else {
+      return node;
+    }
+  }
 }
 
 // primary = num

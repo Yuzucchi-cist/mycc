@@ -121,7 +121,8 @@ int main() {
   statement_test("int func(int i, int j) {int a;funca(a, 1);}");
   statement_test("int main() {int a;a=2;return foo(1, a);} foo(int b, int c) {return b+c;}");
   statement_test("int main() {int a; a=1; int *b; b=&a; return *b;}");
-  */
   statement_test("int main() {int *a; *(a+1) = 0;}");
   statement_test("int main() {int a[5]; *a = 0; *(a+1) = 0;}");
+  */
+  statement_test("int main() {int a[5]; a[2] = 0; 2[a] = 0;}");
 }
