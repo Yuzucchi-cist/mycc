@@ -23,6 +23,8 @@ int lvarOffset = 0;
 void load(type_t *ty) {
   printf("\tpop rax\n");
 
+  if(ty->ty == ARRAY) ty = ty->ptr_to;
+
   if(ty->ty == INT)
     printf("\tmovsx rax, dword ptr [rax]\n");
   else
@@ -147,21 +149,23 @@ void gen(node_t *node) {
       return;
 
     case ND_LVAR:
-      gen_lval(node);
-      load(node->type);
+      gen_addr(node);
+      if(node->type->ty!=ARRAY)
+        load(node->type);
       return;
 
     case ND_ASSIGN:
+      type_t *ty = node->lhs->type;
       if(node->lhs->kind == ND_DEREF) {
-        gen_addr(node->lhs);
-        load(node->lhs->type);
+        gen(node->lhs->lhs);
+        ty = ty->ptr_to;
       }
       else  gen_lval(node->lhs);
       gen(node->rhs);
       
       printf("\tpop rdi\n");
       printf("\tpop rax\n");
-      if(node->lhs->type->ty == INT)
+      if(ty->ty == INT)
         printf("\tmov dword ptr [rax], edi\n");
       else
         printf("\tmov [rax], rdi\n");
@@ -169,14 +173,13 @@ void gen(node_t *node) {
       return;
 
     case ND_ADDR:
-      gen_addr(node);
+      gen_addr(node->lhs);
       printf("\n\n\n");
       return;
 
     case ND_DEREF:
-      gen_addr(node);
+      gen(node->lhs);
       load(node->type);
-      load(node->type->ptr_to);
       return;
   }
 

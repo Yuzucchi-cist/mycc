@@ -19,7 +19,7 @@ char *node_kind_to_string(NodeKind kind) {
   else if(kind == ND_FUNC) return "func";
   else if(kind == ND_RETURN) return "ret";
   else if(kind == ND_ADDR) return "&";
-  else if(kind == ND_DEREF) return "*";
+  else if(kind == ND_DEREF) return "deref";
   else return "?";
 }
 
@@ -120,6 +120,8 @@ int main() {
   statement_test("int func() {int i;int k;for(i=0;i<10;i=i+1) { k+1; }}");
   statement_test("int func(int i, int j) {int a;funca(a, 1);}");
   statement_test("int main() {int a;a=2;return foo(1, a);} foo(int b, int c) {return b+c;}");
-  */
   statement_test("int main() {int a; a=1; int *b; b=&a; return *b;}");
+  */
+  statement_test("int main() {int *a; *(a+1) = 0;}");
+  statement_test("int main() {int a[5]; *a = 0; *(a+1) = 0;}");
 }

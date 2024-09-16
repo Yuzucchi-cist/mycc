@@ -20,13 +20,23 @@ node_t *add_lvar(type_t *ty, token_t *tok) {
     str[tok->len] = '\0';
     error_at(tok->str, "redeclaration of '%s'", str);
   }
+
+
+  if(consume("[")) {
+    type_t *ptr = calloc(1, sizeof(type_t));
+    ptr->ty = ARRAY;
+    ptr->ptr_to = ty;
+    ty = ptr;
+
+    ty->array_size = expect_number();
+    expect("]");
+  }
+
   lvar_t *lvar = calloc(1, sizeof(lvar_t));
   lvar->type = ty;
   lvar->name = tok->str;
   lvar->len = tok->len;
-  int offset = 0;
-  if(ty->ty == PTR) offset = 8;
-  else  offset = 4;
+  int offset = size_of(ty);
   if(!locals) lvar->offset = offset;
   else lvar->offset = locals->offset + offset;
   localOffset += lvar->offset;
@@ -90,6 +100,8 @@ int size_of(type_t *ty) {
       return 4;
     case PTR:
       return 8;
+    case ARRAY:
+      return size_of(ty->ptr_to) * ty->array_size;
   }
 }
 
@@ -179,7 +191,7 @@ node_t *new_block_stmt() {
 }
 
 // stmt = expr ";"
-//      | "int" ident ";"
+//      | "int" ident ("[" num "]")? ";"
 //      | "{" stmt* "}"
 //      | "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
@@ -332,13 +344,15 @@ node_t *unary() {
   else if(consume("-"))
     return new_binary(ND_SUB, new_node_num(0), primary());
   else if(consume("*")) {
-    node_t *node = unary();
-    node->kind = ND_DEREF;
+    node_t *node = new_node(ND_DEREF);
+    node->lhs =  unary();
+    node->type = node->lhs->type;
     return node;
   }
   else if(consume("&")) {
-    node_t *node = unary();
-    node->kind = ND_ADDR;
+    node_t *node = new_node(ND_ADDR);
+    node->lhs =  unary();
+    node->type = node->lhs->type;
     return node;
   }
   return primary();

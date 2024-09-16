@@ -37,8 +37,9 @@ typedef enum {
 typedef struct type_t type_t;
 
 struct type_t {
-  enum { INT, PTR } ty;
+  enum { INT, PTR, ARRAY } ty;
   struct type_t *ptr_to;
+  int array_size;
 };
 
 typedef struct _node_t node_t;
