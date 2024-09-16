@@ -16,22 +16,6 @@ int main(int argc, char **argv) {
   token = tokenize(user_input);
   node_t *node = program();
 
-  // output a first half of assembry
-  printf(".intel_syntax noprefix\n");
-
-  func_t *f = funcs;
-  printf(".globl ");
-  for(;;) {
-    printf("%s", f->name);
-    f = f->next;
-    if(f)  printf(", ");
-    else break;
-  }
-  printf("\n");
-
-  for (int i=0; code[i]; i++) {
-    gen(code[i]);
-  }
-
+  codegen();
   return 0;
 }

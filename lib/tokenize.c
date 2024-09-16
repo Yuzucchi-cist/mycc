@@ -53,6 +53,16 @@ int expect_number() {
   return val;
 }
 
+token_t *peek(char *op) {
+  if(token->kind != TK_RESERVED ||
+    token->len != strlen(op) ||
+    memcmp(token->str, op, token->len)
+  ) {
+    return NULL;
+  }
+  return token;
+}
+
 bool start_with(char *p, char *q) {
   return memcmp(p, q, strlen(q)) == 0;
 }

@@ -8,6 +8,11 @@
 
 #include <tokenize.h>
 
+typedef struct type_t type_t;
+typedef struct var_t var_t;
+typedef struct _node_t node_t;
+typedef struct func_t func_t;
+
 // abstruct syntax tree kind
 typedef enum {
   ND_ADD, // +
@@ -29,20 +34,16 @@ typedef enum {
   ND_BLOCK, // {}
   ND_CALL, // call function statement
   ND_FUNC, // defined function statement
-  ND_LVAR, // local variable
+  ND_VAR, // variable
   ND_NUM, // integer
 } NodeKind;
 
 // type
-typedef struct type_t type_t;
-
 struct type_t {
   enum { INT, PTR, ARRAY } ty;
   struct type_t *ptr_to;
   int array_size;
 };
-
-typedef struct _node_t node_t;
 
 // abstruct syntax tree type
 struct _node_t {
@@ -63,25 +64,25 @@ struct _node_t {
   int argLen;
   node_t *stmt;
 
-  // LVAR
+  // VAR
   type_t *type;
+
+  var_t *var;
 
   int val; // use if kind is ND_NUM
   int offset; // use if kind is ND_LVAR or ND_FUNCTION
 };
 
-typedef struct lvar_t lvar_t;
-
-// local variable type
-struct lvar_t {
+// variable type
+struct var_t {
   type_t *type; // type of variable
   char *name; // variable name
+  bool is_local;  // is local value
+
   int len; // length of variable name
   int offset; // offset from RBP
-  lvar_t *next; // next variable or NULL
+  var_t *next;
 };
-
-typedef struct func_t func_t;
 
 // function type
 struct func_t {
@@ -91,21 +92,30 @@ struct func_t {
 };
 
 extern node_t *code[100];
-extern lvar_t *locals;
+extern var_t *globals;
+extern var_t *locals;
 extern int localLen;
 extern func_t *funcs;
 
-lvar_t *find_lvar(token_t *tok);
+var_t *find_var(token_t *tok);
+
+var_t *declare();
 
 node_t *new_node(NodeKind kind);
 
 node_t *new_binary(NodeKind kind, node_t *lhs, node_t *rhs);
 
+node_t *new_var(var_t *var);
+
 node_t *new_node_num(int val);
 
-node_t *new_node_lvar(token_t *tok);
-
 int size_of(type_t *ty);
+
+type_t* type_specifier();
+
+type_t *type_postfix(type_t *type);
+
+type_t* type_name(type_t *type, char **name);
 
 node_t *program();
 

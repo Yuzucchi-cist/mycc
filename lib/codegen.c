@@ -4,13 +4,18 @@ char *argregw[6] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 char *argregd[6] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 void gen_addr(node_t *node) {
-  printf("\tmov rax, rbp\n");
-  printf("\tsub rax, %d\n", node->offset);
-  printf("\tpush rax\n");
+  var_t *var = node->var;
+  if(var->is_local) {
+    printf("\tmov rax, rbp\n");
+    printf("\tsub rax, %d\n", var->offset);
+    printf("\tpush rax\n");
+  } else {
+    printf("\tpush offset %s\n", var->name);
+  }
 }
 
 void gen_lval(node_t *node) {
-  if (node->kind != ND_LVAR)
+  if (node->kind != ND_VAR)
     error("lhs of assignment is not variable, but got %d", node->kind);
   gen_addr(node);
 }
@@ -34,10 +39,11 @@ void load(type_t *ty) {
 }
 
 void load_arg(node_t *node, int idx) {
-  if(node->type->ty == INT)
-    printf("\tmov [rbp-%d], %s\n", node->offset, argregw[idx]);
+  var_t *var = node->var;
+  if(var->type->ty == INT)
+    printf("\tmov [rbp-%d], %s\n", var->offset, argregw[idx]);
   else
-    printf("\tmov [rbp-%d], %s\n", node->offset, argregd[idx]);
+    printf("\tmov [rbp-%d], %s\n", var->offset, argregd[idx]);
 }
 
 void gen(node_t *node) {
@@ -148,7 +154,7 @@ void gen(node_t *node) {
       printf("\tpush %d\n", node->val);
       return;
 
-    case ND_LVAR:
+    case ND_VAR:
       gen_addr(node);
       if(node->type->ty!=ARRAY)
         load(node->type);
@@ -240,3 +246,38 @@ void gen(node_t *node) {
 
   printf("\tpush rax\n");
 }
+
+void emit_data() {
+  printf(".data\n");
+  for(var_t *var=globals; var; var=var->next) {
+    printf("%s:\n", var->name);
+    printf("\t.zero %d\n", size_of(var->type));
+  }
+}
+
+void emit_text() {
+  printf(".text\n");
+
+  func_t *f = funcs;
+  printf(".globl ");
+  for(;;) {
+    printf("%s", f->name);
+    f = f->next;
+    if(f)  printf(", ");
+    else break;
+  }
+  printf("\n");
+
+  for (int i=0; code[i]; i++) {
+    gen(code[i]);
+  }
+}
+
+void codegen() {
+  // output a first half of assembry
+  printf(".intel_syntax noprefix\n");
+
+  emit_data();
+  emit_text();
+}
+

@@ -1,57 +1,83 @@
 #include "parse.h"
 
-lvar_t *locals = NULL;
+var_t *locals = NULL;
+var_t *globals = NULL;
 func_t *funcs = NULL;
 int localOffset = 0;
 
 // find variable by name
 // return null if variable is not found
-lvar_t *find_lvar(token_t *tok) {
-  for(lvar_t *var = locals; var; var = var->next)
-    if(var->len == tok->len && !memcmp(tok->str, var->name, var->len))
+var_t *find_var(token_t *tok) {
+  for(var_t *var = locals; var; var = var->next)
+    if(!memcmp(tok->str, var->name, tok->len))
+      return var;
+
+  for(var_t *var = globals; var; var = var->next)
+    if(!memcmp(tok->str, var->name, tok->len))
       return var;
   return NULL;
 }
 
+var_t *push_var(type_t *ty, char *name, bool is_local) {
+  var_t *var = calloc(1, sizeof(var_t));
+  var->type = ty;
+  var->name = name;
+
+  var->is_local = is_local;
+
+  if(is_local) {
+    int offset = size_of(ty);
+    if(!locals) var->offset = offset;
+    else  var->offset = locals->offset + offset;
+    localOffset += offset;
+
+    var->next = locals;
+    locals = var;
+  } else {
+    var->next = globals;
+    globals = var;
+  }
+
+  return var;
+}
+
+// add global variable
+void global_var() {
+  type_t *ty = type_specifier();
+  char *name;
+  ty = type_name(ty, &name);
+  ty = type_postfix(ty);
+
+  var_t *var = push_var(ty, name, false);
+  
+  expect(";");
+}
+  
 // add local variarable
-node_t *add_lvar(type_t *ty, token_t *tok) {
-  if(find_lvar(tok)) {
-    char *str = tok->str;
-    str[tok->len] = '\0';
-    error_at(tok->str, "redeclaration of '%s'", str);
+var_t *add_var(type_t *ty, token_t *tok) {
+  
+  var_t *var = push_var(ty, tok->str, true);
+  return var;
+}
+
+var_t *declare() {
+  type_t *ty = type_specifier();
+  token_t *tok = consume_ident();
+  ty = type_postfix(ty);
+
+  char *name = calloc(1, sizeof(char));
+  memcpy(name, tok->str, tok->len);
+  name[tok->len] = '\0';
+
+  if(find_var(tok)) {
+    error_at(tok->str, "redeclaration of '%s'", name);
   }
 
+  return push_var(ty, name, true);
+}
 
-  if(consume("[")) {
-    type_t *ptr = calloc(1, sizeof(type_t));
-    ptr->ty = ARRAY;
-    ptr->ptr_to = ty;
-    ty = ptr;
-
-    ty->array_size = expect_number();
-    expect("]");
-  }
-
-  lvar_t *lvar = calloc(1, sizeof(lvar_t));
-  lvar->type = ty;
-  lvar->name = tok->str;
-  lvar->len = tok->len;
-  int offset = size_of(ty);
-  if(!locals) lvar->offset = offset;
-  else lvar->offset = locals->offset + offset;
-  localOffset += lvar->offset;
-  lvar->next = locals;
-  locals = lvar;
-
-  node_t *node = calloc(1, sizeof(node_t));
-  node->kind = ND_LVAR;
-  node->type = ty;
-  node->name = calloc(1, sizeof(char) * tok->len+1);
-  strncpy(node->name, tok->str, tok->len);
-  node->name[tok->len] = '\0';
-  node->offset = lvar->offset;
-
-  return node;
+bool is_type() {
+  return peek("int");
 }
 
 node_t *new_node(NodeKind kind) {
@@ -68,29 +94,19 @@ node_t *new_binary(NodeKind kind, node_t *lhs, node_t *rhs) {
   return node;
 }
 
+node_t *new_var(var_t *var) {
+  node_t *node = new_node(ND_VAR);
+  node->var = var;
+  node->type = var->type;
+  return node;
+}
+
 node_t *new_node_num(int val) {
   node_t *node = calloc(1, sizeof(node_t));
   node->kind = ND_NUM;
   node->type = calloc(1, sizeof(type_t));
   node->type->ty = INT;
   node->val = val;
-  return node;
-}
-
-node_t *new_node_lvar(token_t *tok) {
-  node_t *node = calloc(1, sizeof(node_t));
-  node->kind = ND_LVAR;
-
-  lvar_t *lvar = find_lvar(tok);
-  if(lvar) {
-    node->type = lvar->type;
-    node->offset = lvar->offset;
-  }
-  else {
-    char *str = tok->str;
-    str[tok->len] = '\0';
-    error_at(tok->str, "%s is undefined local value", str);
-  }
   return node;
 }
 
@@ -107,16 +123,34 @@ int size_of(type_t *ty) {
 
 node_t *code[100];
 
+bool is_function() {
+  token_t *tok = token;
+
+  type_t *ty = type_specifier();
+  char *name;
+  type_name(ty, &name);
+
+  if(ty->ty == ARRAY) return false;
+
+  bool isFunc = ty && name && consume("(");
+  token = tok;
+  return isFunc;
+}
+
 node_t *program() {
   int i=0;
-  while(!at_eof())
-    code[i++] = func();
-//    code[i++] = stmt();
+  while(!at_eof()) {
+    if(is_function()) {
+      code[i++] = func();
+    } else {
+      global_var();
+    }
+  }
   code[i] = NULL;
 }
 
 // type = int "*"*
-type_t *type() {
+type_t *type_specifier() {
   if(!consume("int"))  return NULL;
   type_t *ty = calloc(1, sizeof(type_t));
   ty->ty = INT;
@@ -129,27 +163,51 @@ type_t *type() {
   return ty;
 }
 
+type_t *type_postfix(type_t *ty) {
+  for(;;) {
+    if(consume("[")) {
+      type_t *ptr = calloc(1, sizeof(type_t));
+      ptr->ty = ARRAY;
+      ptr->ptr_to = ty;
+      ty = ptr;
+
+      ty->array_size = expect_number();
+      expect("]");
+    } else {
+      return ty;
+    }
+  }
+}
+
+type_t *type_name(type_t *type, char **name) {
+  token_t *tok = consume_ident();
+  *name = calloc(1, sizeof(char) * tok->len);
+  strncpy(*name, tok->str, tok->len);
+  (*name)[tok->len] = '\0';
+}
+  
+
 // func = int ident "(" ( (int ident ",")* int ident )? ")" "{" stmt "}"
 node_t *func() {
   localOffset = 0;
+  type_t *ty = type_specifier();
+  char *name;
+  ty = type_name(ty, &name);
+  
   node_t *node = calloc(1, sizeof(node_t));
   node->kind = ND_FUNC;
-
-  node->type = type();
-
-  token_t *funcTok = consume_ident();
-  node->name = calloc(1, sizeof(char) * funcTok->len);
-  strncpy(node->name, funcTok->str, funcTok->len);
-  node->name[funcTok->len] = '\0';
+  node->name = name;
 
   expect("(");
   if(!consume(")")) {
     node_t *arg = node;
     for(;;) {
-      type_t *ty = type();
-      arg->arg = add_lvar(ty, consume_ident());
+      
+      
+      arg->arg = new_var(declare());
       arg = arg->arg;
       node->argLen++;
+
       if(consume(")"))  break;
       else expect(",");
     }
@@ -177,7 +235,7 @@ node_t *new_block_stmt() {
   node->kind = ND_BLOCK;
   
   node_t *bstmt = node;
-  lvar_t *oldLocals = locals;
+  var_t *oldLocals = locals;
 
   while(!consume("}")) {
     bstmt->stmt = stmt();
@@ -201,11 +259,10 @@ node_t *new_block_stmt() {
 node_t *stmt() {
   node_t *node;
   
-  type_t *ty = type();
-  if(ty) {
-    node = add_lvar(ty, consume_ident());
-    node = NULL;
+  if(is_type()) {
+    declare();
     expect(";");
+    return NULL;
   }
   else if(consume("{")) {
     node = new_block_stmt();
@@ -407,6 +464,7 @@ node_t *primary() {
           else  expect(",");
         }
       }
+      
       node->name = calloc(1, sizeof(char) * tok->len+1);
       strncpy(node->name, tok->str, tok->len);
       node->name[tok->len] = '\0';
@@ -414,8 +472,13 @@ node_t *primary() {
       node->type->ty = INT;
       return node;
     }
-
-    return new_node_lvar(tok);
+    var_t *var = find_var(tok);
+    if(!var) {
+      char *str = tok->str;
+      str[tok->len] = '\0';
+      error_at(tok->str, "'%s' is not found", str);
+    }
+    return new_var(var);
   }
   
   // other, node would be number

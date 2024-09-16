@@ -10,5 +10,6 @@ extern int localNum;
 
 void gen_lval(node_t *node);
 void gen(node_t *node);
+void codegen();
 
 #endif

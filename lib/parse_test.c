@@ -28,9 +28,10 @@ void print_node(node_t *node, int layer) {
     printf("%d\n", node->val);
     return;
   }
-  if(node->kind == ND_LVAR) {
+  if(node->kind == ND_VAR) {
     char c = (char)('a' + (node->offset / 8) - 1);
-    printf("%c\n", c);
+    var_t *var = node->var;
+    printf("%s -il:%d - offset: %d\n", var->name, var->is_local, var->offset);
     return;
   }
   if(node->kind == ND_FOR) {
@@ -123,6 +124,8 @@ int main() {
   statement_test("int main() {int a; a=1; int *b; b=&a; return *b;}");
   statement_test("int main() {int *a; *(a+1) = 0;}");
   statement_test("int main() {int a[5]; *a = 0; *(a+1) = 0;}");
-  */
   statement_test("int main() {int a[5]; a[2] = 0; 2[a] = 0;}");
+  statement_test("int a; int main() {return 0;}");
+  */
+  statement_test("int main() {int a;int b; a=0;b=0;return 0;}");
 }

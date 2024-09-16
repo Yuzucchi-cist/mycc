@@ -44,6 +44,8 @@ void expect(char *op);
 
 int expect_number();
 
+token_t *peek(char *op);
+
 bool start_with(char *p, char *q);
 
 bool is_alnum(char c);
