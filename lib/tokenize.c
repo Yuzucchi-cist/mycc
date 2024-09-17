@@ -128,6 +128,19 @@ token_t *tokenize(char *p) {
       p++;
       continue;
     }
+
+    // skip line comment
+    if(start_with(p, "//")) {
+      while(*p++ != '\n');
+      continue;
+    }
+
+    // skip block comment
+    if(start_with(p, "/*")) {
+      while(!start_with(p++, "*/"));
+      p++;
+      continue;
+    }
     
     // keyword or multi-letter punctuator
     char *kw = start_with_reserved(p);
