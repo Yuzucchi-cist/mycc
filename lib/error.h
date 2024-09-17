@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 extern char *user_input;
+extern char *filename;
 
 void error(char *fmt, ...);
 

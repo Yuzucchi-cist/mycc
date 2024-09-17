@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  char *filename = argv[1];
+  filename = argv[1];
 
   // tokenize and parse
   user_input = read_file(filename);
