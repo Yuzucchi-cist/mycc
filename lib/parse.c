@@ -18,12 +18,13 @@ var_t *find_var(token_t *tok) {
   return NULL;
 }
 
-var_t *push_var(type_t *ty, char *name, bool is_local) {
+var_t *push_var(type_t *ty, char *name, bool is_local, token_t *tok) {
   var_t *var = calloc(1, sizeof(var_t));
   var->type = ty;
   var->name = name;
 
   var->is_local = is_local;
+  var->tok = tok;
 
   if(is_local) {
     int offset = size_of(ty);
@@ -45,10 +46,11 @@ var_t *push_var(type_t *ty, char *name, bool is_local) {
 void global_var() {
   type_t *ty = type_specifier();
   char *name;
-  ty = type_name(ty, &name);
+  token_t *tok;
+  ty = type_name(ty, &name, &tok);
   ty = type_postfix(ty);
 
-  var_t *var = push_var(ty, name, false);
+  var_t *var = push_var(ty, name, false, tok);
   
   expect(";");
 }
@@ -56,7 +58,7 @@ void global_var() {
 // add local variarable
 var_t *add_var(type_t *ty, token_t *tok) {
   
-  var_t *var = push_var(ty, tok->str, true);
+  var_t *var = push_var(ty, tok->str, true, tok);
   return var;
 }
 
@@ -69,11 +71,13 @@ var_t *declare() {
   memcpy(name, tok->str, tok->len);
   name[tok->len] = '\0';
 
-  if(find_var(tok)) {
-    error_at(tok->str, "redeclaration of '%s'", name);
+  var_t *var = find_var(tok);
+  if(var) {
+    error_at(false, var->tok->str, "'%s' is already declarated here", name);
+    error_at(true, tok->str, "redeclaration of '%s'", name);
   }
 
-  return push_var(ty, name, true);
+  return push_var(ty, name, true, tok);
 }
 
 bool is_type() {
@@ -137,7 +141,7 @@ bool is_function() {
 
   type_t *ty = type_specifier();
   char *name;
-  type_name(ty, &name);
+  type_name(ty, &name, NULL);
 
   if(ty->ty == ARRAY) return false;
 
@@ -193,11 +197,12 @@ type_t *type_postfix(type_t *ty) {
   }
 }
 
-type_t *type_name(type_t *type, char **name) {
-  token_t *tok = consume_ident();
-  *name = calloc(1, sizeof(char) * tok->len);
-  strncpy(*name, tok->str, tok->len);
-  (*name)[tok->len] = '\0';
+type_t *type_name(type_t *type, char **name, token_t **tok) {
+  if(tok == NULL) tok = calloc(1, sizeof(token_t*));
+  *tok = consume_ident();
+  *name = calloc(1, sizeof(char) * (*tok)->len);
+  strncpy(*name, (*tok)->str, (*tok)->len);
+  (*name)[(*tok)->len] = '\0';
 }
   
 
@@ -206,7 +211,7 @@ node_t *func() {
   localOffset = 0;
   type_t *ty = type_specifier();
   char *name;
-  ty = type_name(ty, &name);
+  ty = type_name(ty, &name, NULL);
   
   node_t *node = calloc(1, sizeof(node_t));
   node->kind = ND_FUNC;
@@ -491,7 +496,7 @@ node_t *primary() {
     if(!var) {
       char *str = tok->str;
       str[tok->len] = '\0';
-      error_at(tok->str, "'%s' is not found", str);
+      error_at(true, tok->str, "'%s' is not found", str);
     }
     return new_var(var);
   }
@@ -505,7 +510,7 @@ node_t *primary() {
     ty->ptr_to->ty = CHAR;
     ty->array_size = tok->len;
 
-    var_t *var = push_var(ty, new_label(), false);
+    var_t *var = push_var(ty, new_label(), false, tok);
     var->str = calloc(1, sizeof(char) * tok->len);
     strncpy(var->str, tok->str, tok->len);
     var->str[tok->len] = '\0';

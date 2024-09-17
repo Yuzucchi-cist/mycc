@@ -22,7 +22,7 @@ void error(char *fmt, ...) {
 // print error with format:
 // foo.c:10: x = y + * 5;
 //                   ^ not expresstion
-void error_at(char *loc, char *fmt, ...) {
+void error_at(bool will_finish, char *loc, char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   
@@ -49,7 +49,6 @@ void error_at(char *loc, char *fmt, ...) {
   fprintf(stderr, "^ ");
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
-
-  exit(1);
+  if(will_finish)  exit(1);
 }
 

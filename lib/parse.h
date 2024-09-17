@@ -82,6 +82,9 @@ struct var_t {
   char *str;
   int len; // length of variable name
   int offset; // offset from RBP
+
+  token_t *tok;
+
   var_t *next;
 };
 
@@ -116,7 +119,7 @@ type_t* type_specifier();
 
 type_t *type_postfix(type_t *type);
 
-type_t* type_name(type_t *type, char **name);
+type_t* type_name(type_t *type, char **name, token_t **tok);
 
 node_t *program();
 

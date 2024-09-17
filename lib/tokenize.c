@@ -40,7 +40,7 @@ void expect(char *op) {
     token->len != strlen(op) ||
     memcmp(token->str, op, token->len)
   )
-    error_at(token->str, "'%s' is not expected symbol", op);
+    error_at(true, token->str, "'%s' is not expected symbol", op);
   token = token->next;
 }
 
@@ -51,7 +51,7 @@ int expect_number() {
     char *str = calloc(1, sizeof(char) * token->len);
     strncpy(str, token->str, token->len);
     str[token->len] = '\0';
-    error_at(token->str, "number is expected, but '%s' is not number", str);
+    error_at(true, token->str, "number is expected, but '%s' is not number", str);
   }
   int val = token->val;
   token = token->next;
