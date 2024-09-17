@@ -34,9 +34,12 @@ void alloc(int **p, int a, int b, int c, int d) {
 assert() {
   expected="$1"
   input="$2"
-  ./mycc "$input" > tmp.s
-  if [ "$3" != "" ]; then
-    cc -g -static -o tmp tmp.s $3
+  func_name="$3"
+  char="$4"
+  echo "$input" > tmp.c
+  ./mycc tmp.c > tmp.s
+  if [ $func_name ]; then
+    cc -g -static -o tmp tmp.s $func_name
   else
     cc -g -static -o tmp tmp.s
   fi
