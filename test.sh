@@ -1,4 +1,10 @@
 #!/bin/bash
+
+assert_char() {
+  ascii_of "$1" ascii_num
+  assert "$ascii_num" "$2" "" "$1"
+}
+
 assert_func() {
   func="foo"
   echo "
@@ -38,11 +44,24 @@ assert() {
   actual="$?"
 
   if [ "$actual" = "$expected" ]; then
-    echo "$input => $actual"
+    if [ $char ]; then
+      expected="$expected('$char')"
+    fi
+
+    echo "$input => $expected"
   else
+    if [ $char != "" ]; then
+      expected="$expected('$char')"
+    fi
+
     echo "$input => $expected expected, but got $actual"
     exit 1
   fi
+}
+
+ascii_of() {
+  char="$1"
+  ascii_num=$(printf %d "'$char")
 }
 
 assert 0 " int main() { 0; }"
@@ -110,5 +129,7 @@ assert 2 "int main() {int a[5];*a=1;*(a+1)=2;return *(a+1);}"
 assert 1 "int main() {int a[5]; a[2] = 1;return a[2];}"
 assert 1 "int a; int main() {a=1;return a;}"
 assert 3 "int main() {char x[3];x[0] = -1;x[1] = 2;int y;y = 4;return x[0] + y;}"
+assert_char "e" "int main() {char *s; s = \"Hello, world!\"; return s[1];}"
 
 echo OK
+

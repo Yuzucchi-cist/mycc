@@ -251,7 +251,10 @@ void emit_data() {
   printf(".data\n");
   for(var_t *var=globals; var; var=var->next) {
     printf("%s:\n", var->name);
-    printf("\t.zero %d\n", size_of(var->type));
+    if(!var->str)
+      printf("\t.zero %d\n", size_of(var->type));
+    else
+      printf("\t.string \"%s\"\n", var->str);
   }
 }
 

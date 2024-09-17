@@ -16,7 +16,7 @@ bool consume(char *op) {
 
 // if next token is expected statement, returns true and read next token
 // other, return false
-bool consume_statement(TokenKind kind) {
+bool consume_kind(TokenKind kind) {
   if(token->kind == kind) {
     token = token->next;
     return true;
@@ -136,6 +136,22 @@ token_t *tokenize(char *p) {
     // single-letter punctuator
     if(strchr("+-*/(){}[]<>=,&;", *p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
+      continue;
+    }
+
+    // string literal
+    if(*p == '"') {
+      int len = 0;
+      char *q = ++p;
+      for(;;) {
+        if(*p++ == '"')  break;
+        len++;
+      }
+      p = q;
+
+      cur = new_token(TK_STR, cur, p, len);
+      // skip string including first and last double quotation
+      p += len+1;
       continue;
     }
     

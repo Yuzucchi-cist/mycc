@@ -80,6 +80,13 @@ bool is_type() {
   return peek("int") || peek("char");
 }
 
+char *new_label() {
+  static int cnt = 0;
+  char *buf = calloc(1, sizeof(char) * 20);
+  sprintf(buf, ".Lstr%d", cnt++);
+  return buf;
+}
+
 node_t *new_node(NodeKind kind) {
   node_t *node = calloc(1, sizeof(node_t));
   node->kind = kind;
@@ -445,6 +452,7 @@ node_t *postfix() {
 }
 
 // primary = num
+//         | str
 //         | ident "(" expr* ")"?
 //         | "(" expr ")"
 node_t *primary() {
@@ -485,6 +493,23 @@ node_t *primary() {
       str[tok->len] = '\0';
       error_at(tok->str, "'%s' is not found", str);
     }
+    return new_var(var);
+  }
+
+  // str
+  tok = token;
+  if(consume_kind(TK_STR)) {
+    type_t *ty = calloc(1, sizeof(type_t));
+    ty->ty = ARRAY;
+    ty->ptr_to = calloc(1, sizeof(type_t));
+    ty->ptr_to->ty = CHAR;
+    ty->array_size = tok->len;
+
+    var_t *var = push_var(ty, new_label(), false);
+    var->str = calloc(1, sizeof(char) * tok->len);
+    strncpy(var->str, tok->str, tok->len);
+    var->str[tok->len] = '\0';
+
     return new_var(var);
   }
   

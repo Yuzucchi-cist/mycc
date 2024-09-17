@@ -78,7 +78,8 @@ struct var_t {
   type_t *type; // type of variable
   char *name; // variable name
   bool is_local;  // is local value
-
+  
+  char *str;
   int len; // length of variable name
   int offset; // offset from RBP
   var_t *next;

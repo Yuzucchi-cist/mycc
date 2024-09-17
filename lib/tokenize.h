@@ -13,6 +13,7 @@ typedef enum {
   TK_RESERVED, // symbol
   TK_IDENT, // identifier
   TK_NUM, // integer
+  TK_STR,
   TK_EOF, // token presented input end
 } TokenKind;
 
@@ -30,7 +31,7 @@ extern token_t *token;
 
 bool consume(char *op);
 
-bool consume_statement(TokenKind statement);
+bool consume_kind(TokenKind statement);
 
 token_t *consume_ident();
 
