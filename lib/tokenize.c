@@ -47,7 +47,12 @@ void expect(char *op) {
 // if next token is number, returns the number and read next token
 // other, throws error
 int expect_number() {
-  if (token->kind != TK_NUM) error_at(token->str, "'%s' is not number", token->str);
+  if (token->kind != TK_NUM) {
+    char *str = calloc(1, sizeof(char) * token->len);
+    strncpy(str, token->str, token->len);
+    str[token->len] = '\0';
+    error_at(token->str, "number is expected, but '%s' is not number", str);
+  }
   int val = token->val;
   token = token->next;
   return val;
