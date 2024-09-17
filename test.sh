@@ -156,6 +156,12 @@ assert 0 "int main() {
   */
   return a;
 }"
+assert 0 "int main() {
+  int actual;
+  int a;
+  a = 0;
+  return a;
+}"
 
 echo OK
 

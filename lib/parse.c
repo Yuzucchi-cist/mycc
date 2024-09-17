@@ -9,11 +9,11 @@ int localOffset = 0;
 // return null if variable is not found
 var_t *find_var(token_t *tok) {
   for(var_t *var = locals; var; var = var->next)
-    if(!memcmp(tok->str, var->name, tok->len))
+    if(tok->len == var->len && !memcmp(tok->str, var->name, tok->len))
       return var;
 
   for(var_t *var = globals; var; var = var->next)
-    if(!memcmp(tok->str, var->name, tok->len))
+    if(tok->len == var->len && !memcmp(tok->str, var->name, tok->len))
       return var;
   return NULL;
 }
@@ -22,6 +22,7 @@ var_t *push_var(type_t *ty, char *name, bool is_local, token_t *tok) {
   var_t *var = calloc(1, sizeof(var_t));
   var->type = ty;
   var->name = name;
+  var->len = tok->len;
 
   var->is_local = is_local;
   var->tok = tok;
