@@ -237,6 +237,7 @@ node_t *func() {
   expect("{");
   node->stmt = new_block_stmt();
   node->offset = localOffset;
+  expect("}");
   
   if(funcs==NULL) funcs = calloc(1, sizeof(func_t));
   else {
@@ -257,7 +258,7 @@ node_t *new_block_stmt() {
   node_t *bstmt = node;
   var_t *oldLocals = locals;
 
-  while(!consume("}")) {
+  while(!peek("}")) {
     bstmt->stmt = stmt();
     if(bstmt->stmt)
       bstmt = bstmt->stmt;
@@ -286,6 +287,7 @@ node_t *stmt() {
   }
   else if(consume("{")) {
     node = new_block_stmt();
+    expect("}");
   } else if(consume("return")) {
     node = calloc(1, sizeof(node_t));
     node->kind = ND_RETURN;
@@ -460,11 +462,17 @@ node_t *postfix() {
 // primary = num
 //         | str
 //         | ident "(" expr* ")"?
-//         | "(" expr ")"
+//         | "(" ( expr | { stmt* } )  ")"
 node_t *primary() {
   // if next token is '(', next node would be `( <expr> )`
   if(consume("(")) {
-    node_t *node = expr();
+    node_t *node;
+    if(consume("{")) {
+      node = new_block_stmt();
+      expect("}");
+    } else {
+      node = expr();
+    }
     expect(")");
     return node;
   }

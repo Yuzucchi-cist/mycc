@@ -23,6 +23,7 @@ void gen_lval(node_t *node) {
 int beginLabelCnt = 0;
 int endLabelCnt = 0;
 int elseLabelCnt = 0;
+int callLabelCnt = 0;
 int lvarOffset = 0;
 
 void load(type_t *ty) {
@@ -97,12 +98,15 @@ void gen(node_t *node) {
       if(node->els) {
         printf("\tje .Lelse%d\n", elseLabelCnt);
         gen(node->then);
+        printf("\tpop rax\n");
         printf("\tjmp .Lend%d\n", endLabelCnt);
         printf(".Lelse%d:\n", elseLabelCnt++);
         gen(node->els);
+        printf("\tpop rax\n");
       } else {
         printf("\tje .Lend%d\n", endLabelCnt);
         gen(node->then);
+        printf("\tpop rax\n");
       }
       printf(".Lend%d:\n", endLabelCnt++);
       printf("\tpush rax\n");
@@ -115,6 +119,7 @@ void gen(node_t *node) {
       printf("\tcmp rax, 0\n");
       printf("\tje .Lend%d\n", endLabelCnt);
       gen(node->then);
+      printf("\tpop rax\n");
       printf("\tjmp .Lbegin%d\n", beginLabelCnt++);
       printf(".Lend%d:\n", endLabelCnt++);
       printf("\tpush rax\n");
@@ -122,13 +127,16 @@ void gen(node_t *node) {
 
     case ND_FOR:
       gen(node->init);
+      printf("\tpop rax\n");
       printf(".Lbegin%d:\n", beginLabelCnt);
       gen(node->cond);
       printf("\tpop rax\n");
       printf("\tcmp rax, 0\n");
       printf("\tje .Lend%d\n", endLabelCnt);
       gen(node->then);
+      printf("\tpop rax\n");
       gen(node->adv);
+      printf("\tpop rax\n");
       printf("\tjmp .Lbegin%d\n", beginLabelCnt++);
       printf(".Lend%d:\n", endLabelCnt++);
       printf("\tpush rax\n");
@@ -138,15 +146,34 @@ void gen(node_t *node) {
       int argnum = 0;
       for(node_t *arg = node->arg; arg; arg = arg->arg) {
         gen(arg);
-        printf("\tpop %s\n", argregd[argnum++]);
+        argnum++;
       }
+      for(int i=argnum-1; i>=0; i--)
+        printf("\tpop %s\n", argregd[i]);
 
       // adjust rsp to multiple of 16
-      int offset = 16-lvarOffset%16;
-      printf("\tsub rsp, %d\n", offset);
+      int offset = 16-lvarOffset;
+      // printf("\tsub rsp, %d\n", offset);
 
+      /*
       printf("\tcall %s\n", node->name);
       printf("\tadd rsp, %d\n", offset);
+      printf("\tpush rax\n");
+      return;
+      */
+      int seq = callLabelCnt++;
+      printf("\tmov rax, rsp\n");
+      printf("\tand rax, 15\n");
+      printf("\tjnz .Lcall%d\n", seq);
+      printf("\tmov rax, 0\n");
+      printf("\tcall %s\n", node->name);
+      printf("\tjmp .Lcend%d\n", seq);
+      printf("\t.Lcall%d:\n", seq);
+      printf("\tsub rsp, %d\n", offset);
+      printf("\tmov rax, 0\n");
+      printf("\tcall %s\n", node->name);
+      printf("\tadd rsp, %d\n", offset);
+      printf("\t.Lcend%d:\n", seq);
       printf("\tpush rax\n");
       return;
 
