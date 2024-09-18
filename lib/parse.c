@@ -30,7 +30,7 @@ var_t *push_var(type_t *ty, char *name, bool is_local, token_t *tok) {
   if(is_local) {
     int offset = size_of(ty);
     if(!locals) var->offset = offset;
-    else  var->offset = locals->offset + offset;
+    else  var->offset = localOffset + offset;
     localOffset += offset;
 
     var->next = locals;

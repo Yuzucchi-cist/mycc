@@ -66,7 +66,7 @@ ascii_of() {
   char="$1"
   ascii_num=$(printf %d "'$char")
 }
-<< TEST
+
 assert 0 " int main() { 0; }"
 assert 42 " int main() { 42; }"
 assert 21 " int main() { 5+20-4; }"
@@ -166,7 +166,6 @@ assert_func 3 "int main() {
   bar(({ int a;int b; a=b=1; }), 1);
   return bar(({ int a;int b; a=1;b=1;a+b; }), 1);
 }"
-TEST
 assert 100 "
 int foo(int a) {
   return a;
