@@ -31,11 +31,19 @@ void load(type_t *ty) {
 
   if(ty->ty == ARRAY) ty = ty->ptr_to;
 
-  if(ty->ty == INT)
-    printf("\tmovsx rax, dword ptr [rax]\n");
-  else
-    printf("\tmov rax, [rax]\n");
+  int size = size_of(ty);
 
+  switch(size) {
+    case 1:
+      printf("\tmovsx rax, byte ptr [rax]\n");
+      break;
+    case 4:
+      printf("\tmovsx rax, dword ptr [rax]\n");
+      break;
+    default:
+      printf("\tmov rax, [rax]\n");
+      break;
+  }
   printf("\tpush rax\n");
 }
 
@@ -201,6 +209,19 @@ void gen(node_t *node) {
         printf("\tmov dword ptr [rax], edi\n");
       else
         printf("\tmov [rax], rdi\n");
+      int size = size_of(ty);
+
+      switch(size) {
+        case 1:
+          printf("\tmovsx rax, byte ptr [rax]\n");
+          break;
+        case 4:
+          printf("\tmovsx rax, dword ptr [rax]\n");
+          break;
+        default:
+          printf("\tmov rax, [rax]\n");
+          break;
+      }
       printf("\tpush rdi\n");
       return;
 
