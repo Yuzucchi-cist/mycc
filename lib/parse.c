@@ -68,7 +68,7 @@ var_t *declare() {
   token_t *tok = consume_ident();
   ty = type_postfix(ty);
 
-  char *name = calloc(1, sizeof(char));
+  char *name = calloc(1, sizeof(char) * tok->len + 1 );
   memcpy(name, tok->str, tok->len);
   name[tok->len] = '\0';
 
@@ -494,7 +494,7 @@ node_t *primary() {
         }
       }
       
-      node->name = calloc(1, sizeof(char) * tok->len+1);
+      node->name = calloc(1, sizeof(char) * tok->len + 1);
       strncpy(node->name, tok->str, tok->len);
       node->name[tok->len] = '\0';
       node->type = calloc(1, sizeof(type_t));
@@ -520,7 +520,7 @@ node_t *primary() {
     ty->array_size = tok->len;
 
     var_t *var = push_var(ty, new_label(), false, tok);
-    var->str = calloc(1, sizeof(char) * tok->len);
+    var->str = calloc(1, sizeof(char) * tok->len + 1);
     strncpy(var->str, tok->str, tok->len);
     var->str[tok->len] = '\0';
 
