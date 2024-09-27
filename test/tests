@@ -1,0 +1,115 @@
+int cnt;
+int glbl;
+/*
+assert_char() {
+  ascii_of "$1" ascii_num
+  assert "$ascii_num" "$2" "" "$1"
+}
+*/
+  
+int assert(int expected, int actual, char *code) {
+  printf("%d: %s => ", cnt, code);
+  cnt=cnt+1;
+  if(expected == actual) {
+    printf("%ld\n", actual);
+  }
+  else {
+    printf("'%ld' is expected, but got '%ld'\n", expected, actual);
+    exit(1);
+  }
+}
+
+int foo() {
+  return 1;
+}
+
+int bar(int x, int y) {
+  return x+y;
+}
+
+int baz(int n, int o, int p, int q, int r, int s) {
+  return n + o + p + q + r + s;
+}
+
+int fib(int t) {
+  if(t==0) return 1;
+  if(t==1) return 1;
+  return fib(t-1) + fib(t-2);
+}
+
+int main() {
+  cnt = 0;
+  assert(0, ({ 0; }), "{ 0; }");
+  assert(42, ({ 42; }), "{ 42; }");
+  assert(21, ({ 5+20-4; }), "{ 5+20-4; }");
+  assert(21, ({ 5 + 20 - 4; }), "{ 5 + 20 - 4; }");
+  assert(47, ({ 5+6*7; }), "{ 5+6*7; }");
+  assert(15, ({ 5*(9-6); }), "{ 5*(9-6); }");
+  assert(4, ({ (3+5)/2; }), "{ (3+5)/2; }");
+  assert(5, ({ +5; }), "{ +5; }");
+  assert(13, ({ -5+10+8; }), "{ -5+10+8; }");
+  assert(1, ({ 10>=0; }), "{ 10>=0; }");
+  assert(0, ({ 10<=5; }), "{ 10<=5; }");
+  assert(1, ({ 10==10; }), "{ 10==10; }");
+  assert(0, ({ 10==1; }), "{ 10==1; }");
+  assert(0, ({ 10!=10; }), "{ 10!=10; }");
+  assert(0, ({ int a; a=0; }), "{ int a; a=0; }");
+  assert(1, ({ int a;int b;a=b=1; }), "{ int a;int b;a=b=1; }");
+  assert(2, ({ int a;int b;a=1;b=1;a+b; }), "{ int a;int b;a=1;b=1;a+b; }");
+  assert(2, ({ int a;int ab;a=1;ab=1;a+ab; }), "{ int a;int ab;a=1;ab=1;a+ab; }");
+  assert(1, ({ int a;if(3 >= 0) a=1; else a=2; }), "{ if(3 >= 0) a=1; else a=2; }");
+  assert(1, ({ 10!=1; }), "{ 10!=1; }");
+  assert(2, ({ int a;if(3 <= 0) a=1; else a=2; }), "{ int a;if(3 <= 0) a=1; else a=2; }");
+  assert(10, ({ int i;i=0;while(i < 10)  i=i+1; i;}), "{ int i;i=0;while(i < 10)  i=i+1; i }");
+  assert(10, ({ int i;int j;j=0; for(i=0; i<10; i=i+1) j=j+1; j; }), "{ int i;int j;j=0; for(i=0; i<10; i=i+1) j=j+1; j; }");
+  assert(30, ({ int i;int j;int k;j=0;k=0; for(i=0; i<10; i=i+1){ j=j+1;k=k+2;} j+k; }), "{ int i;int j;int(k;j=0;k=0; for(i=0; i<10; i=i+1){ j=j+1;k=k+2;} j+k; }");
+  assert(1, ({ foo(); }), "{ foo(); }");
+  assert(3, ({ bar(1, 2); }), "{ bar(1, 2); }");
+  assert(21, ({ fib(7); }), "({ fib(7); })");
+  assert(1, ({ int a;int *b;a=1;b=&a; *b; }), "{ int a;int *b;a=1;b=&a; *b; }");
+  assert(1, ({ int a; a=1; int *b; b=&a; *b; }), "{ int a; a=1; int *b; b=&a; *b; }");
+  assert(1, ({ int *a;int b; a=&b;*a=1; b; }), "{ int *a;int b; a=&b;*a=1; b; }");
+  assert(1, ({ foo(1,2,3,4,5,6); }), "{ foo(1,2,3,4,5,6); }");
+  assert(3, ({ int *p;alloc(&p, 1, 2, 3, 4);int *q;q=p+2; *q; }), "{ int *p;alloc(&p, 1, 2, 3, 4);int *q;q=p+2; *q; }");
+  assert(4, ({ int *p;alloc(&p, 1, 2, 3, 4);int *q;q=p-2+5; *q; }), "{ int *p;alloc(&p, 1, 2, 3, 4);int *q;q=p+2; *q; }");
+  assert(4, ({ int a;sizeof(a); }), "{ int a;sizeof(a); }");
+  assert(4, ({ sizeof(1); }), "{ sizeof(1); }");
+  assert(8, ({ int *a;sizeof(a); }), "{ int *a;sizeof(a); }");
+  assert(8, ({ int *a;sizeof(a+2); }), "{ int *a;sizeof(a+2); }");
+  assert(4, ({ int *a;sizeof(sizeof(a)); }), "{ int *a;sizeof(sizeof(a)); }");
+  assert(8, ({ int *p;alloc(&p, 1, 2, 3, 4);*(p+1)=8;*(p+1); }), "{ int *p;alloc(&p, 1, 2, 3, 4);*(p+1)=8;*(p+1); }");
+  assert(2, ({ int a[5];*a=1;*(a+1)=2;*(a+1); }), "{ int a[5];*a=1;*(a+1)=2;*(a+1); }");
+  assert(1, ({ int a[5]; a[2] = 1;a[2]; }), "{ int a[5]; a[2] = 1; a[2]; }");
+  assert(1, ({ glbl = 1; glbl; } ), "{ glbl = 1; glbl; }");
+  assert(3, ({ char x[3];x[0] = -1;x[1] = 2;int y;y = 4; x[0] + y;} ), "{ char x[3];x[0] = -1;x[1] = 2;int y;y = 4; x[0] + y;}");
+  assert(101, ( { char *s; s = "Hello, world!"; char c; c = s[1]; c; } ), "{ char *s; s = Hello, world!; char c; c = s[1]; c; }");
+  printf("OK!\n");
+  return 0;
+}
+
+/*
+assert 2 "int main() {
+  int a;
+  a=0;
+  a=1;
+  a=2;
+  return a;
+}"
+assert 1 "int main() {
+  int a;
+  a=0;
+  a=1;
+  // a=2;
+  return a;
+}"
+*/
+// assert 0 "int main() {
+//   int a;
+//   a=0;
+//  /*
+//   a=1;
+//   a=2;
+//  */
+//   return a;
+// }"
+
