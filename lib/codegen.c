@@ -54,7 +54,7 @@ void gen(node_t *node) {
     // allocate area of 26 variables
     printf("\tpush rbp\n");
     printf("\tmov rbp, rsp\n");
-    printf("\tsub rsp, %d\n", node->offset);
+    printf("\tsub rsp, %d\n", node->offset + (16 - node->offset%16));
     lvarOffset = node->offset;
     
     int argnum = 0;
@@ -152,7 +152,6 @@ void gen(node_t *node) {
         printf("\tpop %s\n", argregd[i]);
 
       // adjust rsp to multiple of 16
-      int offset = 16-lvarOffset;
       // printf("\tsub rsp, %d\n", offset);
 
       /*
@@ -169,10 +168,10 @@ void gen(node_t *node) {
       printf("\tcall %s\n", node->name);
       printf("\tjmp .Lcend%d\n", seq);
       printf("\t.Lcall%d:\n", seq);
-      printf("\tsub rsp, %d\n", offset);
+      printf("\tsub rsp, %d\n", 8);
       printf("\tmov rax, 0\n");
       printf("\tcall %s\n", node->name);
-      printf("\tadd rsp, %d\n", offset);
+      printf("\tadd rsp, %d\n", 8);
       printf("\t.Lcend%d:\n", seq);
       printf("\tpush rax\n");
       return;

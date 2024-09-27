@@ -219,6 +219,7 @@ node_t *func() {
   node->name = name;
 
   expect("(");
+  locals = NULL;
   if(!consume(")")) {
     node_t *arg = node;
     for(;;) {
