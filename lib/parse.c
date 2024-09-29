@@ -201,9 +201,10 @@ type_t *type_postfix(type_t *ty) {
 type_t *type_name(type_t *type, char **name, token_t **tok) {
   if(tok == NULL) tok = calloc(1, sizeof(token_t*));
   *tok = consume_ident();
-  *name = calloc(1, sizeof(char) * (*tok)->len);
+  *name = calloc(1, sizeof(char) * (*tok)->len + 1);
   strncpy(*name, (*tok)->str, (*tok)->len);
   (*name)[(*tok)->len] = '\0';
+  return type;
 }
   
 
