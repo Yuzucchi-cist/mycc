@@ -123,6 +123,8 @@ var_t *declare();
 
 initializer_t *global_initializer();
 
+initializer_t *local_initializer(node_t *var_node);
+
 initializer_t *new_init_val(initializer_t *cur, int val);
 
 initializer_t *new_init_label(initializer_t *cur, char *label, int addend);

@@ -158,6 +158,39 @@ initializer_t *global_initializer(type_t *ty) {
   return new_init_val(NULL, addend);
 }
 
+node_t *local_initializer(node_t *var_node) {
+  type_t *ty = var_node->type;
+  if(consume("{")) {
+
+    int i=0;
+    int limit = ty->is_completed ? ty->array_size : INT_MAX;
+
+    node_t *head = calloc(1, sizeof(node_t));
+    head->stmt = NULL;
+    node_t *cur = head;
+    node_t *tmp;
+    do {
+      tmp = new_node(ND_DEREF);
+      tmp->lhs = new_binary(ND_ADD, var_node, new_node_num(i));
+      tmp->type = tmp->lhs->type;
+
+      cur->stmt = local_initializer(tmp);
+      cur = cur->stmt;
+      i++;
+    } while(i<limit && consume(","));
+
+    if(!ty->is_completed)  ty->array_size = i;
+
+    if(i>ty->array_size)
+      error_at(true, token->str, "array is too long");
+
+    consume("}");
+
+    return head->stmt;
+  }
+  return new_binary(ND_ASSIGN, var_node, assign());
+}
+
 initializer_t *new_init_val(initializer_t *cur, int val) {
   initializer_t *init = calloc(1, sizeof(initializer_t));
   init->val = val;
@@ -380,7 +413,7 @@ node_t *new_block_stmt() {
 
   while(!peek("}")) {
     bstmt->stmt = stmt();
-    if(bstmt->stmt)
+    while(bstmt->stmt)
       bstmt = bstmt->stmt;
   }
   bstmt->stmt = NULL;
@@ -403,6 +436,11 @@ node_t *stmt() {
   if(is_type()) {
     token_t *tok = token;
     var_t *var = declare();
+    if(consume("=")) {
+      node_t *node = local_initializer(new_var(var));
+      expect(";");
+      return node;
+    }
     if(var->type->ty == ARRAY && !var->type->is_completed) {
       token=tok;
       type_specifier();

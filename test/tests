@@ -94,6 +94,11 @@ int main() {
   assert(16, ({ *ptr = 16; glbl; }), "{ *ptr = 16; glbl; }");
   assert(98, ({ char a; a = *sptr; a; }), "{ char a; a = *sptr; a; }");
   assert(3, ({ int a; a = num[2]; a; }), "{ int a; a = num[2]; a; }");
+  assert(2, ({ int a = 2; a; }), "{ int a = 2; a; }");
+  assert(2, ({ int a[2] = {1, 2}; a[1]; }), "{ int a[2] = {1, 2}; a[1]; }");
+  assert(2, ({ int a[] = {1, 2}; a[1]; }), "{ int a[] = {1, 2}; a[1]; }");
+  assert(2, ({ int a[5] = {1, 2}; a[1]; }), "{ int a[5] = {1, 2}; a[1]; }");
+  assert(3, ({ int a[5] = {1, 2, bar(1,2)}; a[2]; }), "{ int a[5] = {1, 2, bar(1,2)}; a[2]; }");
   printf("OK!\n");
   return 0;
 }
