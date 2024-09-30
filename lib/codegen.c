@@ -294,14 +294,48 @@ void gen(node_t *node) {
   printf("\tpush rax\n");
 }
 
+void emit_global(type_t *type, int val) {
+  switch(size_of(type)) {
+    case 1:
+      printf("\t.byte 0x%x\n", val);
+      return;
+    case 4:
+      printf("\t.long %d\n", val);
+      return;
+    case 8:
+      printf("\t.quad %d\n", val);
+      return;
+  }
+}
+
 void emit_data() {
   printf(".data\n");
   for(var_t *var=globals; var; var=var->next) {
     printf("%s:\n", var->name);
-    if(!var->str)
-      printf("\t.zero %d\n", size_of(var->type));
-    else
+    if(var->str) {
       printf("\t.string \"%s\"\n", var->str);
+      continue;
+    }
+    if(var->init) {
+      initializer_t *init = var->init;
+      if(var->type->ty == ARRAY) {
+        for(int i=0; i<var->type->array_size; i++) {
+          emit_global(var->type->ptr_to, init->val);
+          init = init->next;
+        }
+        continue;
+      } else if(init->label) {
+          if(init->addend) {
+            printf("\t.quad %s + %d\n", init->label, init->addend);
+          } else {
+            printf("\t.quad %s\n", init->label);
+          }
+      } else {
+        emit_global(var->type, init->val);
+      }
+    } else {
+        printf("\t.zero %d\n", size_of(var->type));
+    }
   }
 }
 

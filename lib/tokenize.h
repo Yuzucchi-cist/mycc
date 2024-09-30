@@ -31,7 +31,7 @@ extern token_t *token;
 
 bool consume(char *op);
 
-bool consume_kind(TokenKind statement);
+token_t *consume_kind(TokenKind statement);
 
 token_t *consume_ident();
 

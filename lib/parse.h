@@ -4,12 +4,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <error.h>
 
 #include <tokenize.h>
 
 typedef struct type_t type_t;
 typedef struct var_t var_t;
+typedef struct initializer_t initializer_t;
 typedef struct _node_t node_t;
 typedef struct func_t func_t;
 
@@ -43,6 +45,7 @@ struct type_t {
   enum { CHAR, INT, PTR, ARRAY } ty;
   struct type_t *ptr_to;
   int array_size;
+  bool is_completed;
 };
 
 // abstruct syntax tree type
@@ -77,11 +80,16 @@ struct _node_t {
 struct var_t {
   type_t *type; // type of variable
   char *name; // variable name
+  int len; // length of variable name
+
   bool is_local;  // is local value
   
   char *str;
-  int len; // length of variable name
+
+  // local
   int offset; // offset from RBP
+
+  initializer_t *init;
 
   token_t *tok;
 
@@ -95,6 +103,14 @@ struct func_t {
   func_t *next;
 };
 
+struct initializer_t {
+  int val;
+  char *label;
+  int addend;
+  int size;
+  initializer_t *next;
+};
+
 extern node_t *code[100];
 extern var_t *globals;
 extern var_t *locals;
@@ -105,6 +121,14 @@ var_t *find_var(token_t *tok);
 
 var_t *declare();
 
+initializer_t *global_initializer();
+
+initializer_t *new_init_val(initializer_t *cur, int val);
+
+initializer_t *new_init_label(initializer_t *cur, char *label, int addend);
+
+initializer_t *new_init_zero(initializer_t *cur, int size);
+
 node_t *new_node(NodeKind kind);
 
 node_t *new_binary(NodeKind kind, node_t *lhs, node_t *rhs);
@@ -112,6 +136,8 @@ node_t *new_binary(NodeKind kind, node_t *lhs, node_t *rhs);
 node_t *new_var(var_t *var);
 
 node_t *new_node_num(int val);
+
+node_t *new_node_str(token_t *tok);
 
 int size_of(type_t *ty);
 
@@ -146,5 +172,7 @@ node_t *unary();
 node_t *postfix();
 
 node_t *primary();
+
+int eval(node_t *node, var_t **var);
 
 #endif

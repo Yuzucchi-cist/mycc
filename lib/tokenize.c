@@ -16,12 +16,13 @@ bool consume(char *op) {
 
 // if next token is expected statement, returns true and read next token
 // other, return false
-bool consume_kind(TokenKind kind) {
+token_t *consume_kind(TokenKind kind) {
   if(token->kind == kind) {
+    token_t *tok = token;
     token = token->next;
-    return true;
+    return tok;
   }
-  return false;
+  return NULL;
 }
 
 // if next token is identifier token, returns true and read next token

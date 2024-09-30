@@ -44,6 +44,7 @@ var_t *push_var(type_t *ty, char *name, bool is_local, token_t *tok) {
 }
 
 // add global variable
+// global_var = type_name type_postfix ident ( = global_initializer )? ";"
 void global_var() {
   type_t *ty = type_specifier();
   char *name;
@@ -52,6 +53,11 @@ void global_var() {
   ty = type_postfix(ty);
 
   var_t *var = push_var(ty, name, false, tok);
+
+  if(consume("=")) {
+    initializer_t *init = global_initializer(ty);
+    var->init = init;
+  }
   
   expect(";");
 }
@@ -83,6 +89,96 @@ var_t *declare() {
 
 bool is_type() {
   return peek("int") || peek("char");
+}
+
+// global_initializer = str | expr
+initializer_t *global_initializer(type_t *ty) {
+  // str
+  token_t *tok = consume_kind(TK_STR);
+  if(ty->ptr_to && ty->ptr_to->ty == CHAR && tok) {
+    initializer_t *head = calloc(1, sizeof(initializer_t));
+    head->next = NULL;
+    initializer_t *cur = head;
+
+    int i = 0;
+
+    if(ty->is_completed && ty->array_size < tok->len)
+      error_at(true, tok->str, "array is too long");
+
+    do {
+      cur = new_init_val(cur, tok->str[i]);
+      i++;
+    } while(i<tok->len);
+    cur = new_init_val(cur, '\0');
+
+    if(ty->is_completed)  cur = new_init_zero(cur, ty->array_size - i);
+    else  ty->array_size = tok->len;
+    
+    ty->ty = ARRAY;
+
+    return head->next;
+  }
+
+  if(tok) error_at(true, tok->str, "literal is not valid");
+
+  if(ty->ty == ARRAY) {
+    consume("{");
+
+    int limit = ty->is_completed ? ty->array_size : INT_MAX;
+    initializer_t *head = calloc(1, sizeof(initializer_t));
+    head->next = NULL;
+    initializer_t *cur = head;
+    int i=0;
+    do {
+       cur->next = global_initializer(ty->ptr_to);
+       cur = cur->next;
+       i++;
+    } while(i<limit && consume(","));
+
+    if(i>=limit)
+      error_at(true, token->str, "array is too long");
+
+    consume("}");
+
+    if(ty->is_completed)
+      cur = new_init_zero(cur, ty->array_size - i);
+    else
+      ty->array_size = i;
+
+    return head->next;
+  }
+
+  node_t *e = expr();
+
+  var_t *var = NULL;
+  int addend = eval(e, &var);
+  if(var)
+    return new_init_label(NULL, var->name, addend);
+
+  return new_init_val(NULL, addend);
+}
+
+initializer_t *new_init_val(initializer_t *cur, int val) {
+  initializer_t *init = calloc(1, sizeof(initializer_t));
+  init->val = val;
+  if(cur) cur->next = init;
+  return init;
+}
+
+initializer_t *new_init_label(initializer_t *cur, char *label, int addend) {
+  initializer_t *init = calloc(1, sizeof(initializer_t));
+  init->label = label;
+  init->addend = addend;
+  if(cur) cur->next = init;
+  return init;
+}
+
+initializer_t *new_init_zero(initializer_t *cur, int size) {
+  for(int i=0; i<size; i++) {
+    cur->next = new_init_val(cur, 0);
+    cur = cur->next;
+  }
+  return cur;
 }
 
 char *new_label() {
@@ -120,6 +216,21 @@ node_t *new_node_num(int val) {
   node->type->ty = INT;
   node->val = val;
   return node;
+}
+
+node_t *new_node_str(token_t *tok) {
+  type_t *ty = calloc(1, sizeof(type_t));
+  ty->ty = ARRAY;
+  ty->ptr_to = calloc(1, sizeof(type_t));
+  ty->ptr_to->ty = CHAR;
+  ty->array_size = tok->len;
+
+  var_t *var = push_var(ty, new_label(), false, tok);
+  var->str = calloc(1, sizeof(char) * tok->len + 1);
+  strncpy(var->str, tok->str, tok->len);
+  var->str[tok->len] = '\0';
+
+  return new_var(var);
 }
 
 int size_of(type_t *ty) {
@@ -189,6 +300,13 @@ type_t *type_postfix(type_t *ty) {
       ptr->ty = ARRAY;
       ptr->ptr_to = ty;
       ty = ptr;
+
+      if(consume("]")) {
+        ty->is_completed = false;
+        continue;
+      }
+
+      ty->is_completed = true;
 
       ty->array_size = expect_number();
       expect("]");
@@ -283,7 +401,13 @@ node_t *stmt() {
   node_t *node;
   
   if(is_type()) {
-    declare();
+    token_t *tok = token;
+    var_t *var = declare();
+    if(var->type->ty == ARRAY && !var->type->is_completed) {
+      token=tok;
+      type_specifier();
+      error_at(true, token->str, "array size missing in %s", var->name);
+    }
     expect(";");
     return NULL;
   }
@@ -513,23 +637,39 @@ node_t *primary() {
   }
 
   // str
-  tok = token;
-  if(consume_kind(TK_STR)) {
-    type_t *ty = calloc(1, sizeof(type_t));
-    ty->ty = ARRAY;
-    ty->ptr_to = calloc(1, sizeof(type_t));
-    ty->ptr_to->ty = CHAR;
-    ty->array_size = tok->len;
-
-    var_t *var = push_var(ty, new_label(), false, tok);
-    var->str = calloc(1, sizeof(char) * tok->len + 1);
-    strncpy(var->str, tok->str, tok->len);
-    var->str[tok->len] = '\0';
-
-    return new_var(var);
-  }
+  tok = consume_kind(TK_STR);
+  if(tok) return new_node_str(tok);
   
   // other, node would be number
   return new_node_num(expect_number());
+}
+
+int eval(node_t *node, var_t **var) {
+  switch(node->kind) {
+    case ND_ADD:
+      return eval(node->lhs, var) + eval(node->rhs, var);
+    case ND_SUB:
+      return eval(node->lhs, var) - eval(node->rhs, NULL);
+    case ND_MUL:
+      return eval(node->lhs, NULL) * eval(node->rhs, NULL);
+    case ND_DIV:
+      return eval(node->lhs, NULL) / eval(node->rhs, NULL);
+    case ND_EQ:
+      return eval(node->lhs, NULL) == eval(node->rhs, NULL);
+    case ND_NE:
+      return eval(node->lhs, NULL) != eval(node->rhs, NULL);
+    case ND_LT:
+      return eval(node->lhs, NULL) < eval(node->rhs, NULL);
+    case ND_LE:
+      return eval(node->lhs, NULL) <= eval(node->rhs, NULL);
+    case ND_NUM:
+      return node->val;
+    case ND_VAR:
+      *var = node->var;
+      return 0;
+    case ND_ADDR:
+      *var = node->lhs->var;
+      return 0;
+  }
 }
 

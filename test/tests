@@ -1,5 +1,10 @@
 int cnt;
-int glbl;
+int glbl = 3;
+char *str = "foobar";
+int num[] = {1, 2, 3};
+int *ptr = &glbl;
+char *sptr = str + 3;
+
 /*
 assert_char() {
   ascii_of "$1" ascii_num
@@ -80,9 +85,15 @@ int main() {
   assert(8, ({ int *p;alloc(&p, 1, 2, 3, 4);*(p+1)=8;*(p+1); }), "{ int *p;alloc(&p, 1, 2, 3, 4);*(p+1)=8;*(p+1); }");
   assert(2, ({ int a[5];*a=1;*(a+1)=2;*(a+1); }), "{ int a[5];*a=1;*(a+1)=2;*(a+1); }");
   assert(1, ({ int a[5]; a[2] = 1;a[2]; }), "{ int a[5]; a[2] = 1; a[2]; }");
+  assert(3, ({ glbl; } ), "{ glbl; }");
   assert(1, ({ glbl = 1; glbl; } ), "{ glbl = 1; glbl; }");
   assert(3, ({ char x[3];x[0] = -1;x[1] = 2;int y;y = 4; x[0] + y;} ), "{ char x[3];x[0] = -1;x[1] = 2;int y;y = 4; x[0] + y;}");
   assert(101, ( { char *s; s = "Hello, world!"; char c; c = s[1]; c; } ), "{ char *s; s = Hello, world!; char c; c = s[1]; c; }");
+  assert(111, str[1], "str[1]");
+  assert(glbl, *ptr, "*ptr");
+  assert(16, ({ *ptr = 16; glbl; }), "{ *ptr = 16; glbl; }");
+  assert(98, ({ char a; a = *sptr; a; }), "{ char a; a = *sptr; a; }");
+  assert(3, ({ int a; a = num[2]; a; }), "{ int a; a = num[2]; a; }");
   printf("OK!\n");
   return 0;
 }
